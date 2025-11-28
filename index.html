@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Agent SMS Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      background: #020617;
+      padding: 12px 16px;
+      border-bottom: 1px solid #1f2937;
+      z-index: 10;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 4px 0;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .container {
+      padding: 12px 8px 24px 8px;
+    }
+    .agent {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      background: #020617;
+      border: 1px solid #1f2937;
+    }
+    .agent input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #22c55e;
+      flex-shrink: 0;
+    }
+    .info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+    .name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+    .phone-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .phone-label {
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .phone {
+      font-size: 13px;
+      text-decoration: none;
+      color: #38bdf8;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .phone:active {
+      color: #0ea5e9;
+    }
+    .clear-btn {
+      font-size: 11px;
+      color: #f87171;
+      background: transparent;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+    .clear-btn:active { color: #ef4444; }
+    .done {
+      opacity: 0.5;
+    }
+    .footer-note {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 12px;
+      text-align: center;
+      padding: 0 12px;
+    }
+  </style>
+  <script>
+    (function(){
+      var KEY = 'smsSent';
+      var state;
+      try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
+      function setRow(phone, checked){
+        if(checked){ state[phone] = true; } else { delete state[phone]; }
+        localStorage.setItem(KEY, JSON.stringify(state));
+        var row = document.querySelector('.agent input[data-phone="'+phone+'"]');
+        if(!row) return;
+        var container = row.closest('.agent');
+        var cb = container && container.querySelector('input[type="checkbox"]');
+        if(cb) cb.checked = checked;
+        if(container) container.classList.toggle('done', checked);
+      }
+      document.addEventListener('DOMContentLoaded', function(){
+        var rows = document.querySelectorAll('.agent');
+        rows.forEach(function(container){
+          var input = container.querySelector('input[type="checkbox"]');
+          if(!input) return;
+          var phone = input.getAttribute('data-phone');
+          if(state[phone]){
+            input.checked = true;
+            container.classList.add('done');
+          }
+          input.addEventListener('change', function(){
+            setRow(phone, input.checked);
+          });
+          var link = container.querySelector('a.phone');
+          if(link){
+            link.addEventListener('click', function(){
+              setRow(phone, true);
+            }, {passive: true});
+          }
+          var phoneRow = container.querySelector('.phone-row');
+          if(phoneRow){
+            var clear = document.createElement('button');
+            clear.type = 'button';
+            clear.className = 'clear-btn';
+            clear.textContent = 'Uncheck';
+            clear.addEventListener('click', function(e){
+              e.preventDefault();
+              setRow(phone, false);
+            });
+            phoneRow.appendChild(clear);
+          }
+        });
+      });
+    })();
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Agent SMS Tracker</h1>
+    <div class="subtitle">Tap the number to text · check the box after you’ve messaged them.</div>
+  </header>
+  <div class="container">
+    <div class="agent">
+      <input type="checkbox" data-phone="2286690211" />
+      <div class="info">
+        <div class="name">Jodi Busch</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286690211">(228) 669-0211</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288614414" />
+      <div class="info">
+        <div class="name">Bill Lawler</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288614414">(228) 861-4414</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2513666228" />
+      <div class="info">
+        <div class="name">Carl Watson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12513666228">(251) 366-6228</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286977104" />
+      <div class="info">
+        <div class="name">Jonathan Marshall</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286977104">(228) 697-7104</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282160438" />
+      <div class="info">
+        <div class="name">Kacie Denny</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282160438">(228) 216-0438</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5127056589" />
+      <div class="info">
+        <div class="name">Angela Vasconcellos</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15127056589">(512) 705-6589</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2284241936" />
+      <div class="info">
+        <div class="name">Lee Jordan</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12284241936">(228) 424-1936</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2284242930" />
+      <div class="info">
+        <div class="name">Rachel Cochran</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12284242930">(228) 424-2930</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5402293253" />
+      <div class="info">
+        <div class="name">Brittany Zelaya</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15402293253">(540) 229-3253</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286972397" />
+      <div class="info">
+        <div class="name">Mandy Merritt</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286972397">(228) 697-2397</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5048137885" />
+      <div class="info">
+        <div class="name">Nakia Miller</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15048137885">(504) 813-7885</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6017230140" />
+      <div class="info">
+        <div class="name">Kim Alexander</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16017230140">(601) 723-0140</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288614806" />
+      <div class="info">
+        <div class="name">Kristi Ferguson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288614806">(228) 861-4806</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283271684" />
+      <div class="info">
+        <div class="name">Renate Woodward</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283271684">(228) 327-1684</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283247481" />
+      <div class="info">
+        <div class="name">Velma Johnson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283247481">(228) 324-7481</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286236501" />
+      <div class="info">
+        <div class="name">Jonathan Fernandez</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286236501">(228) 623-6501</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282979501" />
+      <div class="info">
+        <div class="name">Lara Bernich Alley</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282979501">(228) 297-9501</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283437413" />
+      <div class="info">
+        <div class="name">Demetrist Bass</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283437413">(228) 343-7413</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="3018205154" />
+      <div class="info">
+        <div class="name">Noha Banoub</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:13018205154">(301) 820-5154</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="7208479719" />
+      <div class="info">
+        <div class="name">Myranda Bermudez</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:17208479719">(720) 847-9719</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282237095" />
+      <div class="info">
+        <div class="name">Charlotte Blount</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282237095">(228) 223-7095</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6015861675" />
+      <div class="info">
+        <div class="name">Crystal Bramlett</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16015861675">(601) 586-1675</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282385631" />
+      <div class="info">
+        <div class="name">Tammy Briggs</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282385631">(228) 238-5631</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282390598" />
+      <div class="info">
+        <div class="name">Jeenna Brunn</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282390598">(228) 239-0598</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286695328" />
+      <div class="info">
+        <div class="name">Miles Buchanan</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286695328">(228) 669-5328</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282132046" />
+      <div class="info">
+        <div class="name">Kansas B. Carter</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282132046">(228) 213-2046</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286718608" />
+      <div class="info">
+        <div class="name">Lee Cyr</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286718608">(228) 671-8608</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288062301" />
+      <div class="info">
+        <div class="name">Anthony R. Chatman</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288062301">(228) 806-2301</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2285471435" />
+      <div class="info">
+        <div class="name">Jamie Daniels</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12285471435">(228) 547-1435</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288619069" />
+      <div class="info">
+        <div class="name">Susan Daniels</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288619069">(228) 861-9069</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288067474" />
+      <div class="info">
+        <div class="name">Tabari Daniels</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288067474">(228) 806-7474</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283438314" />
+      <div class="info">
+        <div class="name">Scypion Davis</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283438314">(228) 343-8314</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283436820" />
+      <div class="info">
+        <div class="name">Terry Davis</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283436820">(228) 343-6820</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282341414" />
+      <div class="info">
+        <div class="name">Tywana Daughtry</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282341414">(228) 234-1414</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6019517545" />
+      <div class="info">
+        <div class="name">Amber Deschamp</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16019517545">(601) 951-7545</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282176780" />
+      <div class="info">
+        <div class="name">Cody Ezell</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282176780">(228) 217-6780</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283411416" />
+      <div class="info">
+        <div class="name">Jean Evans</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283411416">(228) 341-1416</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="8082952137" />
+      <div class="info">
+        <div class="name">Kevin Fajardo</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:18082952137">(808) 295-2137</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2287314088" />
+      <div class="info">
+        <div class="name">Brandy Ferrell</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12287314088">(228) 731-4088</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282148500" />
+      <div class="info">
+        <div class="name">Shaya Felix</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282148500">(228) 214-8500</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6464962897" />
+      <div class="info">
+        <div class="name">Sara Guice</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16464962897">(646) 496-2897</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282972687" />
+      <div class="info">
+        <div class="name">Kristin Guthrie</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282972687">(228) 297-2687</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283245239" />
+      <div class="info">
+        <div class="name">Pam Hall</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283245239">(228) 324-5239</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2285479175" />
+      <div class="info">
+        <div class="name">Re’gene Hall</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12285479175">(228) 547-9175</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283572149" />
+      <div class="info">
+        <div class="name">Vinecia Hawkins</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283572149">(228) 357-2149</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282299048" />
+      <div class="info">
+        <div class="name">Cindy Hoang</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282299048">(228) 229-9048</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2514015880" />
+      <div class="info">
+        <div class="name">Isaac Hudgins</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12514015880">(251) 401-5880</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6013250355" />
+      <div class="info">
+        <div class="name">Gloria Hudson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16013250355">(601) 325-0355</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282292446" />
+      <div class="info">
+        <div class="name">Lark Jones</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282292446">(228) 229-2446</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="3175234841" />
+      <div class="info">
+        <div class="name">Dean Kraner</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:13175234841">(317) 523-4841</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283440124" />
+      <div class="info">
+        <div class="name">Jesse Lewis</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283440124">(228) 344-0124</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286691636" />
+      <div class="info">
+        <div class="name">Patrick Lyons</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286691636">(228) 669-1636</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288615006" />
+      <div class="info">
+        <div class="name">Thomas Lyons</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288615006">(228) 861-5006</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282348242" />
+      <div class="info">
+        <div class="name">Irene Magee</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282348242">(228) 234-8242</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288060030" />
+      <div class="info">
+        <div class="name">Keri Manley</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288060030">(228) 806-0030</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286990273" />
+      <div class="info">
+        <div class="name">Robin McCaleb</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286990273">(228) 699-0273</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="7206304931" />
+      <div class="info">
+        <div class="name">Lisa E. McKim</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:17206304931">(720) 630-4931</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2514061150" />
+      <div class="info">
+        <div class="name">Denise Monroe</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12514061150">(251) 406-1150</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282174374" />
+      <div class="info">
+        <div class="name">Connie Nettles</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282174374">(228) 217-4374</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282231535" />
+      <div class="info">
+        <div class="name">Jaime Norwood</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282231535">(228) 223-1535</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282246895" />
+      <div class="info">
+        <div class="name">Joshlyn Olivier</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282246895">(228) 224-6895</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286692608" />
+      <div class="info">
+        <div class="name">Telicia Partman</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286692608">(228) 669-2608</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288615328" />
+      <div class="info">
+        <div class="name">Lydia Pickard</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288615328">(228) 861-5328</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288608855" />
+      <div class="info">
+        <div class="name">Maria Picolo</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288608855">(228) 860-8855</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="8288179022" />
+      <div class="info">
+        <div class="name">Melette Ramsey</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:18288179022">(828) 817-9022</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9049471875" />
+      <div class="info">
+        <div class="name">Ally Rayne</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19049471875">(904) 947-1875</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288616997" />
+      <div class="info">
+        <div class="name">Sarah Rider</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288616997">(228) 861-6997</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283820177" />
+      <div class="info">
+        <div class="name">Karin Riley</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283820177">(228) 382-0177</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282438907" />
+      <div class="info">
+        <div class="name">Madison Ross</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282438907">(228) 243-8907</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283839090" />
+      <div class="info">
+        <div class="name">Annetta Shaw</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283839090">(228) 383-9090</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282092557" />
+      <div class="info">
+        <div class="name">Angela Smith</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282092557">(228) 209-2557</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2285477935" />
+      <div class="info">
+        <div class="name">Vicki Stallworth</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12285477935">(228) 547-7935</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6015291347" />
+      <div class="info">
+        <div class="name">Brandy Stinson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16015291347">(601) 529-1347</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282974674" />
+      <div class="info">
+        <div class="name">Tanya Swoope</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282974674">(228) 297-4674</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="7326722753" />
+      <div class="info">
+        <div class="name">Rashmi Taormina</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:17326722753">(732) 672-2753</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283285255" />
+      <div class="info">
+        <div class="name">Jodie Wyrick</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283285255">(228) 328-5255</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282162333" />
+      <div class="info">
+        <div class="name">Nancy Stone</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282162333">(228) 216-2333</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283266680" />
+      <div class="info">
+        <div class="name">Jonathan Griffin</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283266680">(228) 326-6680</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282189911" />
+      <div class="info">
+        <div class="name">Christine Hudson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282189911">(228) 218-9911</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2085192612" />
+      <div class="info">
+        <div class="name">Damaris Royalty</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12085192612">(208) 519-2612</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288068738" />
+      <div class="info">
+        <div class="name">David Becher</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288068738">(228) 806-8738</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2513770884" />
+      <div class="info">
+        <div class="name">Liz Wackenhut</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12513770884">(251) 377-0884</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288618486" />
+      <div class="info">
+        <div class="name">Richard Reynolds</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288618486">(228) 861-8486</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282810313" />
+      <div class="info">
+        <div class="name">Libby Rickley</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282810313">(228) 281-0313</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286975479" />
+      <div class="info">
+        <div class="name">John Gomez</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286975479">(228) 697-5479</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282293962" />
+      <div class="info">
+        <div class="name">Mariia Comeau</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282293962">(228) 229-3962</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9857711531" />
+      <div class="info">
+        <div class="name">Jordan Ladner</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19857711531">(985) 771-1531</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282570678" />
+      <div class="info">
+        <div class="name">Kristen Price</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282570678">(228) 257-0678</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282431222" />
+      <div class="info">
+        <div class="name">Nicole Sanchez</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282431222">(228) 243-1222</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6015408522" />
+      <div class="info">
+        <div class="name">Brandon Lewis</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16015408522">(601) 540-8522</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="4046657596" />
+      <div class="info">
+        <div class="name">Shawn Hickam</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:14046657596">(404) 665-7596</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283342241" />
+      <div class="info">
+        <div class="name">Vicki Pace</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283342241">(228) 334-2241</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286971173" />
+      <div class="info">
+        <div class="name">Julie Groue</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286971173">(228) 697-1173</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283274504" />
+      <div class="info">
+        <div class="name">Lauren Panasuk</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283274504">(228) 327-4504</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283729690" />
+      <div class="info">
+        <div class="name">Michaela Simms</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283729690">(228) 372-9690</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283810100" />
+      <div class="info">
+        <div class="name">Lindsey Akins</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283810100">(228) 381-0100</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6195301033" />
+      <div class="info">
+        <div class="name">Saqr Al Dulaimi</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16195301033">(619) 530-1033</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014346823" />
+      <div class="info">
+        <div class="name">Lynn Ann Spiller</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014346823">(601) 434-6823</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283271613" />
+      <div class="info">
+        <div class="name">Candice Anzelde</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283271613">(228) 327-1613</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282641021" />
+      <div class="info">
+        <div class="name">Shirley Ann Ard</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282641021">(228) 264-1021</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283372667" />
+      <div class="info">
+        <div class="name">Tenisha Austin</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283372667">(228) 337-2667</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9855150782" />
+      <div class="info">
+        <div class="name">Nathan Bell</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19855150782">(985) 515-0782</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5047567559" />
+      <div class="info">
+        <div class="name">Becky Bell</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15047567559">(504) 756-7559</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282384581" />
+      <div class="info">
+        <div class="name">Nolan Bobinger</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282384581">(228) 238-4581</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283466781" />
+      <div class="info">
+        <div class="name">Katina Bodden</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283466781">(228) 346-6781</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2284938889" />
+      <div class="info">
+        <div class="name">Eneatra Bolton</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12284938889">(228) 493-8889</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9857749788" />
+      <div class="info">
+        <div class="name">Liz Boudoin</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19857749788">(985) 774-9788</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2285473135" />
+      <div class="info">
+        <div class="name">Sonya Carter</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12285473135">(228) 547-3135</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="8502916645" />
+      <div class="info">
+        <div class="name">Kevin Clarke</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:18502916645">(850) 291-6645</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5049205468" />
+      <div class="info">
+        <div class="name">Patience Clasen</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15049205468">(504) 920-5468</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9854453154" />
+      <div class="info">
+        <div class="name">Damon Cousin</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19854453154">(985) 445-3154</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6012605934" />
+      <div class="info">
+        <div class="name">Christopher Craft</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16012605934">(601) 260-5934</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282814961" />
+      <div class="info">
+        <div class="name">Michael Creekmore</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282814961">(228) 281-4961</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282825502" />
+      <div class="info">
+        <div class="name">Anessa Davidson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282825502">(228) 282-5502</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6018190446" />
+      <div class="info">
+        <div class="name">Charles Dawe</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16018190446">(601) 819-0446</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288614165" />
+      <div class="info">
+        <div class="name">Allen Deal</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288614165">(228) 861-4165</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2284247984" />
+      <div class="info">
+        <div class="name">Jean Denton</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12284247984">(228) 424-7984</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5049081437" />
+      <div class="info">
+        <div class="name">Janet DeOcampo</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15049081437">(504) 908-1437</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6013106838" />
+      <div class="info">
+        <div class="name">Suzanne Dessens</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16013106838">(601) 310-6838</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5049082006" />
+      <div class="info">
+        <div class="name">Mike Deviney</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15049082006">(504) 908-2006</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282237423" />
+      <div class="info">
+        <div class="name">Curtis Douglas</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282237423">(228) 223-7423</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282820819" />
+      <div class="info">
+        <div class="name">Lahela Guzman</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282820819">(228) 282-0819</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282820869" />
+      <div class="info">
+        <div class="name">TJ Dunaway</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282820869">(228) 282-0869</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5048587742" />
+      <div class="info">
+        <div class="name">Rita Ekenta</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15048587742">(504) 858-7742</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283261108" />
+      <div class="info">
+        <div class="name">Lauren L. Esposito</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283261108">(228) 326-1108</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282092652" />
+      <div class="info">
+        <div class="name">George Fassitt</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282092652">(228) 209-2652</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282092650" />
+      <div class="info">
+        <div class="name">Janice Fassitt</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282092650">(228) 209-2650</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282970732" />
+      <div class="info">
+        <div class="name">Christina Fayard</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282970732">(228) 297-0732</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6012702394" />
+      <div class="info">
+        <div class="name">Ryan Galey</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16012702394">(601) 270-2394</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6626031438" />
+      <div class="info">
+        <div class="name">Patricia Garrett</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16626031438">(662) 603-1438</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6012974772" />
+      <div class="info">
+        <div class="name">Anita George</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16012974772">(601) 297-4772</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282349320" />
+      <div class="info">
+        <div class="name">Shannon Gomez</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282349320">(228) 234-9320</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014677176" />
+      <div class="info">
+        <div class="name">Sallie Gray</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014677176">(601) 467-7176</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283826500" />
+      <div class="info">
+        <div class="name">Dwight Green</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283826500">(228) 382-6500</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014668606" />
+      <div class="info">
+        <div class="name">Kathrine Griffith</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014668606">(601) 466-8606</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9852907989" />
+      <div class="info">
+        <div class="name">Windol Griswold</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19852907989">(985) 290-7989</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="8504819804" />
+      <div class="info">
+        <div class="name">Olivia J. Hanson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:18504819804">(850) 481-9804</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="7152400364" />
+      <div class="info">
+        <div class="name">Courtney Harper</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:17152400364">(715) 240-0364</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2286694445" />
+      <div class="info">
+        <div class="name">Velveda Harried</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12286694445">(228) 669-4445</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283439047" />
+      <div class="info">
+        <div class="name">Carol L. Henderson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283439047">(228) 343-9047</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014084941" />
+      <div class="info">
+        <div class="name">Jeremy Hester</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014084941">(601) 408-4941</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014083318" />
+      <div class="info">
+        <div class="name">Ebonee Hester</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014083318">(601) 408-3318</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6015514455" />
+      <div class="info">
+        <div class="name">Roman Holmes</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16015514455">(601) 551-4455</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9859695058" />
+      <div class="info">
+        <div class="name">Yvonne Hulsey</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19859695058">(985) 969-5058</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282165560" />
+      <div class="info">
+        <div class="name">Yolanda Hunt</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282165560">(228) 216-5560</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283831006" />
+      <div class="info">
+        <div class="name">Jeffrey Huntley</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283831006">(228) 383-1006</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6015492668" />
+      <div class="info">
+        <div class="name">Brittany Hutchinson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16015492668">(601) 549-2668</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="7193313867" />
+      <div class="info">
+        <div class="name">Gabriel Jaime</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:17193313867">(719) 331-3867</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9856885466" />
+      <div class="info">
+        <div class="name">Colette Jeansonne</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19856885466">(985) 688-5466</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="8327274041" />
+      <div class="info">
+        <div class="name">Muriah Jenkins</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:18327274041">(832) 727-4041</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5049313786" />
+      <div class="info">
+        <div class="name">Jacqueline Johnson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15049313786">(504) 931-3786</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014084571" />
+      <div class="info">
+        <div class="name">Carmen Kendrick</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014084571">(601) 408-4571</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282654435" />
+      <div class="info">
+        <div class="name">Candi Key</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282654435">(228) 265-4435</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6013258859" />
+      <div class="info">
+        <div class="name">Holly Knight</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16013258859">(601) 325-8859</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6017957971" />
+      <div class="info">
+        <div class="name">Cassidy Ladner</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16017957971">(601) 795-7971</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288600145" />
+      <div class="info">
+        <div class="name">Tracy Lamey</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288600145">(228) 860-0145</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282189911" />
+      <div class="info">
+        <div class="name">Kelly Lane</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282189911">(228) 218-9911</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6018189369" />
+      <div class="info">
+        <div class="name">Agustina Leal</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16018189369">(601) 818-9369</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014631400" />
+      <div class="info">
+        <div class="name">Kaleb Lee</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014631400">(601) 463-1400</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282356798" />
+      <div class="info">
+        <div class="name">Jacqueline Levy</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282356798">(228) 235-6798</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283136285" />
+      <div class="info">
+        <div class="name">Khari Levy</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283136285">(228) 313-6285</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2258921867" />
+      <div class="info">
+        <div class="name">Jeffery Lindsay</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12258921867">(225) 892-1867</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282383912" />
+      <div class="info">
+        <div class="name">Jessica Long</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282383912">(228) 238-3912</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9855098699" />
+      <div class="info">
+        <div class="name">Tiffany Lord</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19855098699">(985) 509-8699</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6019350956" />
+      <div class="info">
+        <div class="name">Brandon McDonald</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16019350956">(601) 935-0956</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014673427" />
+      <div class="info">
+        <div class="name">Ernest McInnis</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014673427">(601) 467-3427</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6014471949" />
+      <div class="info">
+        <div class="name">Christy McLemore</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16014471949">(601) 447-1949</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282345544" />
+      <div class="info">
+        <div class="name">Yasmin Mohiuddin</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282345544">(228) 234-5544</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5043907479" />
+      <div class="info">
+        <div class="name">Mark Montet</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15043907479">(504) 390-7479</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="7605774706" />
+      <div class="info">
+        <div class="name">Daniel Morales</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:17605774706">(760) 577-4706</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2289181273" />
+      <div class="info">
+        <div class="name">Crystal Nelson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12289181273">(228) 918-1273</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9857880291" />
+      <div class="info">
+        <div class="name">Lena Nesbit</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19857880291">(985) 788-0291</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282829272" />
+      <div class="info">
+        <div class="name">Kim Nguyen</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282829272">(228) 282-9272</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2284475269" />
+      <div class="info">
+        <div class="name">Tammy Nguyen</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12284475269">(228) 447-5269</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9857102028" />
+      <div class="info">
+        <div class="name">Jeri Nowell</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19857102028">(985) 710-2028</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283803312" />
+      <div class="info">
+        <div class="name">Kari O&#x27;Neil</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283803312">(228) 380-3312</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283691730" />
+      <div class="info">
+        <div class="name">Edward Ortiz</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283691730">(228) 369-1730</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5044000828" />
+      <div class="info">
+        <div class="name">Arlene Perkins</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15044000828">(504) 400-0828</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6013374288" />
+      <div class="info">
+        <div class="name">Angela Peterson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16013374288">(601) 337-4288</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6782968314" />
+      <div class="info">
+        <div class="name">Jay Quiles</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16782968314">(678) 296-8314</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2288607165" />
+      <div class="info">
+        <div class="name">Robert Reeder</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12288607165">(228) 860-7165</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6012971375" />
+      <div class="info">
+        <div class="name">Cathy Reeves</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16012971375">(601) 297-1375</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282355495" />
+      <div class="info">
+        <div class="name">Raegan Robinson</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282355495">(228) 235-5495</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="8595447211" />
+      <div class="info">
+        <div class="name">Amy Rose</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:18595447211">(859) 544-7211</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="3373036757" />
+      <div class="info">
+        <div class="name">Amy Rugama</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:13373036757">(337) 303-6757</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="7402439525" />
+      <div class="info">
+        <div class="name">Carley Sark</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:17402439525">(740) 243-9525</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5049751690" />
+      <div class="info">
+        <div class="name">Lori Scott</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15049751690">(504) 975-1690</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282386263" />
+      <div class="info">
+        <div class="name">Larry Semski</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282386263">(228) 238-6263</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9857075684" />
+      <div class="info">
+        <div class="name">Wayne Setliff</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19857075684">(985) 707-5684</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283839387" />
+      <div class="info">
+        <div class="name">Kerry Shows</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283839387">(228) 383-9387</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282785549" />
+      <div class="info">
+        <div class="name">Roxanne Shumaker</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282785549">(228) 278-5549</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9857688642" />
+      <div class="info">
+        <div class="name">Erin L. Singletary</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19857688642">(985) 768-8642</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5043570541" />
+      <div class="info">
+        <div class="name">Shanika Slaughter</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15043570541">(504) 357-0541</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282746918" />
+      <div class="info">
+        <div class="name">Lakenya Spann</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282746918">(228) 274-6918</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2283822388" />
+      <div class="info">
+        <div class="name">Christian Steward</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12283822388">(228) 382-2388</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="5044356397" />
+      <div class="info">
+        <div class="name">Shana Stewart</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:15044356397">(504) 435-6397</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="2282631963" />
+      <div class="info">
+        <div class="name">Glenn Stewart</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:12282631963">(228) 263-1963</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="6012707847" />
+      <div class="info">
+        <div class="name">Melody Stroka</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:16012707847">(601) 270-7847</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="3185000846" />
+      <div class="info">
+        <div class="name">Jennifer Tagliarino</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:13185000846">(318) 500-0846</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="9014838448" />
+      <div class="info">
+        <div class="name">Elijah Thomas</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:19014838448">(901) 483-8448</a>
+        </div>
+      </div>
+    </div>
+    <div class="agent">
+      <input type="checkbox" data-phone="8503768369" />
+      <div class="info">
+        <div class="name">Chelsea Tully</div>
+        <div class="phone-row">
+          <div class="phone-label">Tap to text:</div>
+          <a class="phone" href="sms:18503768369">(850) 376-8369</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-note">
+      Checkmarks are saved only on this device in your browser (localStorage).
+      If you clear your browser data, the checklist will reset.
+    </div>
+  </div>
+  <script>
+    const items = document.querySelectorAll('.agent');
+    items.forEach(item => {
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      const phone = checkbox.getAttribute('data-phone');
+      const key = 'agent_texted_' + phone;
+
+      // Restore state
+      const saved = localStorage.getItem(key);
+      if (saved === '1') {
+        checkbox.checked = true;
+        item.classList.add('done');
+      }
+
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          localStorage.setItem(key, '1');
+          item.classList.add('done');
+        } else {
+          localStorage.setItem(key, '0');
+          item.classList.remove('done');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
