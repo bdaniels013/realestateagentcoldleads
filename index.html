@@ -218,8 +218,15 @@
         var input = container.querySelector('input[type="checkbox"]');
         var link = container.querySelector('a.phone');
         var phone = input ? input.getAttribute('data-phone') : null;
-        if(!phone && link){ var t = (link.textContent||'').replace(/\D/g,''); if(t.length===11 && t[0]==='1') t=t.slice(1); if(t.length===10) phone=t; }
-        if(!phone) return;
+        if(!phone && link){
+          var rawHref = link.getAttribute('href') || '';
+          var mHref = rawHref.match(/(\d{10,11})/);
+          var tText = (link.textContent||'').replace(/\D/g,'');
+          var t = (mHref && mHref[1]) ? mHref[1] : tText;
+          if(t && t.length===11 && t[0]==='1') t=t.slice(1);
+          if(t && t.length===10) phone=t;
+        }
+        if(!phone){ return; }
         var fullName = (container.querySelector('.name')?.textContent || '').trim();
         var nameText = fullName.split(/\s+/)[0] || fullName;
         var brokerageText = (container.querySelector('.brokerage')?.textContent || '').trim();
@@ -228,17 +235,20 @@
           container.classList.add('done');
         }
         if(input){ input.addEventListener('change', function(){ setRow(phone, input.checked); }); }
-          if(link){ try { link.setAttribute('href', '#'); } catch(_) {}
-            link.onclick = function(e){
-              e.preventDefault();
-              var body = renderScript({ name: nameText, brokerage: brokerageText });
-              var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-              var url = isiOS ? ('sms:/open?addresses='+phone+'&body='+encodeURIComponent(body)) : ('sms:'+phone+'?body='+encodeURIComponent(body));
-              try { window.location.href = url; } catch(_) {}
-              setTimeout(function(){ setRow(phone, true); }, 300);
-            }; }
-          var nameEl = container.querySelector('.name');
-          if(nameEl){ nameEl.addEventListener('click', function(){ setRow(phone, true); }); }
+        if(link && !link.dataset.smsWired){
+          try { link.setAttribute('href', '#'); } catch(_) {}
+          link.addEventListener('click', function(e){
+            e.preventDefault();
+            var body = renderScript({ name: nameText, brokerage: brokerageText });
+            var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            var url = isiOS ? ('sms:/open?addresses='+phone+'&body='+encodeURIComponent(body)) : ('sms:'+phone+'?body='+encodeURIComponent(body));
+            try { window.location.href = url; } catch(_) {}
+            setTimeout(function(){ setRow(phone, true); }, 300);
+          });
+          link.dataset.smsWired = '1';
+        }
+        var nameEl = container.querySelector('.name');
+        if(nameEl){ nameEl.addEventListener('click', function(){ setRow(phone, true); }); }
         var phoneRow = container.querySelector('.phone-row');
         if(phoneRow && !phoneRow.querySelector('.clear-btn')){
           var clear = document.createElement('button');
@@ -331,6 +341,7 @@
             });
             phoneRow.appendChild(clear);
           }
+          wireAgent(container);
         });
         resortActive();
         updateCounts();
