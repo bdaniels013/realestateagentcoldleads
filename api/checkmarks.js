@@ -24,7 +24,8 @@ async function ensureCheckmarksTable(){
   try {
     const conn = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
     if (conn) {
-      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
+      const cfg = pgConfigFromUrl(conn)
+      const client = cfg ? new PgClient(cfg) : new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false, require: true } })
       await client.connect()
       await client.query('CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())')
       await client.end()
@@ -49,7 +50,8 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
+      const cfg = pgConfigFromUrl(conn)
+      const client = cfg ? new PgClient(cfg) : new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false, require: true } })
       await client.connect()
       const r = await client.query('SELECT phone, checked, updated_at FROM checkmarks')
       await client.end()
@@ -69,7 +71,8 @@ export default async function handler(req, res) {
         return
       }
       const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
+      const cfg = pgConfigFromUrl(conn)
+      const client = cfg ? new PgClient(cfg) : new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false, require: true } })
       await client.connect()
       await client.query('INSERT INTO checkmarks(phone, checked, updated_at) VALUES($1, $2, now()) ON CONFLICT (phone) DO UPDATE SET checked=$2, updated_at=now()', [phone, checked])
       await client.end()
@@ -82,4 +85,17 @@ export default async function handler(req, res) {
     }
   }
   res.status(405).json({ error: 'method_not_allowed' })
+}
+function pgConfigFromUrl(conn){
+  try{
+    const u = new URL(String(conn || '').trim())
+    return {
+      host: u.hostname,
+      port: Number(u.port) || 5432,
+      database: (u.pathname || '/postgres').slice(1),
+      user: decodeURIComponent(u.username || ''),
+      password: decodeURIComponent(u.password || ''),
+      ssl: { rejectUnauthorized: false, require: true }
+    }
+  }catch(_){ return null }
 }

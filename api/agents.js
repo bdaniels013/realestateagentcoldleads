@@ -24,7 +24,8 @@ async function ensureAgentsTable(){
   try {
     const conn = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
     if (conn) {
-      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
+      const cfg = pgConfigFromUrl(conn)
+      const client = cfg ? new PgClient(cfg) : new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false, require: true } })
       await client.connect()
       await client.query('CREATE TABLE IF NOT EXISTS agents (id serial primary key, name text not null, phone text unique not null, brokerage text)')
       await client.end()
@@ -49,7 +50,8 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
+      const cfg = pgConfigFromUrl(conn)
+      const client = cfg ? new PgClient(cfg) : new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false, require: true } })
       await client.connect()
       const r = await client.query('SELECT name, phone, brokerage FROM agents ORDER BY name')
       await client.end()
@@ -64,7 +66,8 @@ export default async function handler(req, res) {
       const items = Array.isArray(body) ? body : [body]
       const inserted = []
       const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
+      const cfg = pgConfigFromUrl(conn)
+      const client = cfg ? new PgClient(cfg) : new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false, require: true } })
       await client.connect()
       for (const it of items) {
         const name = String(it.name || 'Unknown').trim()
@@ -85,4 +88,17 @@ export default async function handler(req, res) {
     }
   }
   res.status(405).json({ error: 'method_not_allowed' })
+}
+function pgConfigFromUrl(conn){
+  try{
+    const u = new URL(String(conn || '').trim())
+    return {
+      host: u.hostname,
+      port: Number(u.port) || 5432,
+      database: (u.pathname || '/postgres').slice(1),
+      user: decodeURIComponent(u.username || ''),
+      password: decodeURIComponent(u.password || ''),
+      ssl: { rejectUnauthorized: false, require: true }
+    }
+  }catch(_){ return null }
 }
