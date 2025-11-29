@@ -479,6 +479,18 @@
         var tgl = document.getElementById('toggle-picker');
         if(tgl){ var saved = localStorage.getItem('smsAlwaysPicker'); if(saved!==null){ pickerAlways = saved==='true'; } tgl.textContent = 'Always Show Picker: '+(pickerAlways?'On':'Off'); tgl.addEventListener('click', function(){ pickerAlways = !pickerAlways; localStorage.setItem('smsAlwaysPicker', String(pickerAlways)); tgl.textContent = 'Always Show Picker: '+(pickerAlways?'On':'Off'); }); }
         var pc = document.getElementById('picker-cancel'); if(pc){ pc.addEventListener('click', function(){ var ov = document.getElementById('picker-overlay'); if(ov) ov.style.display='none'; }); }
+        var openScript = document.getElementById('open-script');
+        var scriptOverlay = document.getElementById('script-overlay');
+        var scriptTitle = document.getElementById('script-title');
+        var scriptText = document.getElementById('script-text');
+        var scriptSave = document.getElementById('script-save');
+        var scriptCancel = document.getElementById('script-cancel');
+        function getScript(){ var s = localStorage.getItem('smsScript'); return (s && s.trim()) ? s : 'Hey {name}, I\u2019m Blake Daniels. I build websites and do media and marketing to help people grow their business. I saw your profile on your brokerage\u2019s site. Do you have your own personal website or do you just use the brokerage site?'; }
+        if(openScript && scriptOverlay && scriptText && scriptSave && scriptCancel){
+          openScript.addEventListener('click', function(){ scriptText.value = getScript(); if(scriptTitle) scriptTitle.value=''; scriptOverlay.style.display = 'flex'; });
+          scriptCancel.addEventListener('click', function(){ scriptOverlay.style.display = 'none'; });
+          scriptSave.addEventListener('click', function(){ var title = (scriptTitle && scriptTitle.value || '').trim() || 'Untitled'; var text = (scriptText.value||'').trim(); if(!text){ scriptOverlay.style.display='none'; return } fetch('/api/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:title, text:text }) }).then(function(r){ return r.ok ? r.json() : null }).then(function(){ scriptOverlay.style.display='none'; fetchTemplates(); }).catch(function(){ scriptOverlay.style.display='none'; }); });
+        }
 
         var fab = document.getElementById('add-agent-fab');
         if(fab){ fab.addEventListener('click', function(){ var o = document.getElementById('add-overlay'); if(o) o.style.display = 'flex'; }); }
