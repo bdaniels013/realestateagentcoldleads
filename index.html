@@ -11,6 +11,7 @@
       padding: 0;
       background: #0f172a;
       color: #e5e7eb;
+      -webkit-tap-highlight-color: transparent;
     }
     header {
       position: sticky;
@@ -142,7 +143,30 @@
     .add-actions { display: flex; gap: 8px; justify-content: flex-end; }
     .btn { font-size: 14px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; }
     .section-title { font-size: 13px; color: #9ca3af; margin: 14px 10px 6px 10px; }
-    @media (hover: none) and (pointer: coarse) { .agent { padding: 12px 14px; } .agent input[type="checkbox"] { width: 22px; height: 22px; } .phone { display: inline-block; padding: 6px 8px; } }
+    :root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
+    .container { padding-bottom: calc(24px + var(--safe-bottom)); }
+    @media (hover: none) and (pointer: coarse) {
+      .agent { padding: 14px 16px; }
+      .agent input[type="checkbox"] { width: 22px; height: 22px; }
+      .phone { display: inline-block; padding: 8px 10px; font-size: 15px; }
+      .clear-btn { padding: 6px 10px; font-size: 12px; }
+    }
+    @media (max-width: 480px) {
+      h1 { font-size: 16px; }
+      .subtitle { font-size: 12px; }
+      .search input { font-size: 16px; padding: 10px 12px; }
+      .tab-btn { font-size: 14px; padding: 8px 14px; }
+      .badge { font-size: 12px; }
+      .agent { padding: 16px 18px; }
+      .name { font-size: 16px; }
+      .brokerage { font-size: 13px; }
+      .phone { font-size: 16px; }
+      .btn { font-size: 16px; padding: 10px 14px; }
+      .fab { width: 60px; height: 60px; font-size: 30px; bottom: calc(20px + var(--safe-bottom)); }
+      .script-box { width: 100%; max-width: none; height: 100%; border-radius: 0; }
+      .picker-box { width: 100%; max-width: none; height: 100%; border-radius: 0; overflow-y: auto; }
+      .picker-item { padding: 12px; }
+    }
   </style>
   <script>
     (function(){
