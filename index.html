@@ -246,6 +246,7 @@
           }
         }
         updateCounts();
+        applyCurrentSort();
         if(authed){
           try {
             fetch('/api/checkmarks', {
@@ -476,6 +477,7 @@
             if(!input) return;
             setRow(phone, checked);
           });
+          applyCurrentSort();
           updateCounts();
         }
         function fetchServerCheckmarks(){
