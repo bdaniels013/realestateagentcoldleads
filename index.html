@@ -128,6 +128,7 @@
     .add-box textarea { padding: 10px 12px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; min-height: 120px; }
     .add-actions { display: flex; gap: 8px; justify-content: flex-end; }
     .btn { font-size: 14px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; }
+    .section-title { font-size: 13px; color: #9ca3af; margin: 14px 10px 6px 10px; }
     @media (hover: none) and (pointer: coarse) { .agent { padding: 12px 14px; } .agent input[type="checkbox"] { width: 22px; height: 22px; } .phone { display: inline-block; padding: 6px 8px; } }
   </style>
   <script>
@@ -146,15 +147,16 @@
         var cb = container && container.querySelector('input[type="checkbox"]');
         if(cb) cb.checked = checked;
         if(container) container.classList.toggle('done', checked);
-        var list = document.querySelector('.container');
-        if(list && container){
-          if(checked){
-            list.appendChild(container);
-          } else {
+        var activeList = document.querySelector('.container');
+        var completedList = document.getElementById('completed');
+        if(container){
+          if(checked && completedList){
+            completedList.appendChild(container);
+          } else if(activeList){
             var order = parseInt(container.dataset.order || '0', 10);
-            var candidates = Array.from(list.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done') && el !== container; });
+            var candidates = Array.from(activeList.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done') && el !== container; });
             var before = candidates.find(function(el){ return parseInt(el.dataset.order || '0', 10) > order; });
-            list.insertBefore(container, before || (candidates.length ? candidates[candidates.length-1].nextSibling : list.firstChild));
+            activeList.insertBefore(container, before || (candidates.length ? candidates[candidates.length-1].nextSibling : activeList.firstChild));
           }
         }
         if(authed){
@@ -257,6 +259,8 @@
           if(state[phone]){
             input.checked = true;
             container.classList.add('done');
+            var completedList = document.getElementById('completed');
+            if(completedList){ completedList.appendChild(container); }
           }
           input.addEventListener('change', function(){
             setRow(phone, input.checked);
@@ -328,13 +332,18 @@
                 var name = String(item.name || 'Unknown');
                 var brokerage = String(item.brokerage || '');
                 var el = createAgent(name, phone, brokerage);
-                containerEl.appendChild(el);
+                var initialChecked = !!state[phone];
+                if(initialChecked && document.getElementById('completed')){
+                  document.getElementById('completed').appendChild(el);
+                } else {
+                  containerEl.appendChild(el);
+                }
+                wireAgent(el);
                 // apply check state if present in local storage
                 var input = el.querySelector('input[type="checkbox"]');
                 if(input){
-                  var checked = !!state[phone];
-                  input.checked = checked;
-                  el.classList.toggle('done', checked);
+                  input.checked = initialChecked;
+                  el.classList.toggle('done', initialChecked);
                 }
               });
             })
@@ -601,6 +610,8 @@
     </div>
   </div>
   <button id="add-agent-fab" class="fab" aria-label="Add Agent">+</button>
+  <div class="section-title">Completed</div>
+  <div id="completed" class="container"></div>
   <div class="container">
     
     <div class="agent">
