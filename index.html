@@ -57,6 +57,7 @@
       font-size: 14px;
       font-weight: 600;
       color: #e5e7eb;
+      cursor: pointer;
     }
     .phone-row {
       display: flex;
@@ -135,6 +136,7 @@
       var state;
       try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
       var authed = false;
+      var maxOrder = 0;
       function setRow(phone, checked){
         if(checked){ state[phone] = true; } else { delete state[phone]; }
         localStorage.setItem(KEY, JSON.stringify(state));
@@ -144,6 +146,17 @@
         var cb = container && container.querySelector('input[type="checkbox"]');
         if(cb) cb.checked = checked;
         if(container) container.classList.toggle('done', checked);
+        var list = document.querySelector('.container');
+        if(list && container){
+          if(checked){
+            list.appendChild(container);
+          } else {
+            var order = parseInt(container.dataset.order || '0', 10);
+            var candidates = Array.from(list.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done') && el !== container; });
+            var before = candidates.find(function(el){ return parseInt(el.dataset.order || '0', 10) > order; });
+            list.insertBefore(container, before || (candidates.length ? candidates[candidates.length-1].nextSibling : list.firstChild));
+          }
+        }
         if(authed){
           try {
             fetch('/api/checkmarks', {
@@ -172,8 +185,10 @@
           container.classList.add('done');
         }
         input.addEventListener('change', function(){ setRow(phone, input.checked); });
-        var link = container.querySelector('a.phone');
-        if(link){ link.addEventListener('click', function(){ setRow(phone, true); }, {passive: true}); }
+          var link = container.querySelector('a.phone');
+          if(link){ link.addEventListener('click', function(){ setRow(phone, true); }, {passive: true}); }
+          var nameEl = container.querySelector('.name');
+          if(nameEl){ nameEl.addEventListener('click', function(){ setRow(phone, true); }); }
         var phoneRow = container.querySelector('.phone-row');
         if(phoneRow && !phoneRow.querySelector('.clear-btn')){
           var clear = document.createElement('button');
@@ -198,6 +213,7 @@
               <a class="phone" href="${smsHref}">${formatPhone(phoneDigits)}</a>
             </div>
           </div>`;
+        container.dataset.order = String(++maxOrder);
         return container;
       }
       function parseLine(line){
@@ -223,6 +239,8 @@
           var n = container.querySelector('.name');
           return n && n.textContent.trim().toLowerCase() === 'jodie wyrick';
         });
+        rows.forEach(function(c, i){ c.dataset.order = String(i); });
+        maxOrder = rows.length ? rows.length - 1 : 0;
         rows.forEach(function(container, idx){
           var input = container.querySelector('input[type="checkbox"]');
           if(!input) return;
