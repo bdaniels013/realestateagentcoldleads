@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       const r = await client.query('SELECT phone, checked, updated_at FROM checkmarks')
       await client.end()
       res.status(200).json(r.rows)
-    } catch (_) { res.status(200).json([]) }
+    } catch (e) { console.error('checkmarks GET error', e && e.message ? e.message : e); res.status(200).json([]) }
     return
   }
   if (req.method === 'POST') {
@@ -76,6 +76,7 @@ export default async function handler(req, res) {
       res.status(200).json({ phone, checked })
       return
     } catch (e) {
+      console.error('checkmarks POST error', e && e.message ? e.message : e)
       res.status(500).json({ error: 'server_error' })
       return
     }

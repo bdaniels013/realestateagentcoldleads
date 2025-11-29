@@ -79,6 +79,7 @@ export default async function handler(req, res) {
       res.status(200).json({ inserted })
       return
     } catch (e) {
+      console.error('agents POST error', e && e.message ? e.message : e)
       res.status(500).json({ error: 'server_error' })
       return
     }
