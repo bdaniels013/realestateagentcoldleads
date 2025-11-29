@@ -216,8 +216,10 @@
       }
       function wireAgent(container){
         var input = container.querySelector('input[type="checkbox"]');
-        if(!input) return;
-        var phone = input.getAttribute('data-phone');
+        var link = container.querySelector('a.phone');
+        var phone = input ? input.getAttribute('data-phone') : null;
+        if(!phone && link){ var t = (link.textContent||'').replace(/\D/g,''); if(t.length===11 && t[0]==='1') t=t.slice(1); if(t.length===10) phone=t; }
+        if(!phone) return;
         var fullName = (container.querySelector('.name')?.textContent || '').trim();
         var nameText = fullName.split(/\s+/)[0] || fullName;
         var brokerageText = (container.querySelector('.brokerage')?.textContent || '').trim();
@@ -225,17 +227,16 @@
           input.checked = true;
           container.classList.add('done');
         }
-        input.addEventListener('change', function(){ setRow(phone, input.checked); });
-          var link = container.querySelector('a.phone');
+        if(input){ input.addEventListener('change', function(){ setRow(phone, input.checked); }); }
           if(link){ try { link.setAttribute('href', '#'); } catch(_) {}
-            link.addEventListener('click', function(e){
+            link.onclick = function(e){
               e.preventDefault();
               var body = renderScript({ name: nameText, brokerage: brokerageText });
               var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
               var url = isiOS ? ('sms:/open?addresses='+phone+'&body='+encodeURIComponent(body)) : ('sms:'+phone+'?body='+encodeURIComponent(body));
               try { window.location.href = url; } catch(_) {}
               setTimeout(function(){ setRow(phone, true); }, 300);
-            }); }
+            }; }
           var nameEl = container.querySelector('.name');
           if(nameEl){ nameEl.addEventListener('click', function(){ setRow(phone, true); }); }
         var phoneRow = container.querySelector('.phone-row');
