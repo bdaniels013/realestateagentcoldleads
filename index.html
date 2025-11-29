@@ -69,6 +69,10 @@
       font-size: 11px;
       color: #6b7280;
     }
+    .brokerage {
+      font-size: 12px;
+      color: #9ca3af;
+    }
     .phone {
       font-size: 13px;
       text-decoration: none;
@@ -98,12 +102,29 @@
       text-align: center;
       padding: 0 12px;
     }
+    .search {
+      margin-top: 8px;
+    }
+    .search input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+      background: #0b1220;
+      color: #e5e7eb;
+      font-size: 14px;
+    }
+    .login-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .login-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 360px; display: grid; gap: 10px; }
+    .login-box input { padding: 8px 10px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; }
+    .login-box button { font-size: 14px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 8px 10px; }
   </style>
   <script>
     (function(){
       var KEY = 'smsSent';
       var state;
       try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
+      var authed = false;
       function setRow(phone, checked){
         if(checked){ state[phone] = true; } else { delete state[phone]; }
         localStorage.setItem(KEY, JSON.stringify(state));
@@ -113,13 +134,98 @@
         var cb = container && container.querySelector('input[type="checkbox"]');
         if(cb) cb.checked = checked;
         if(container) container.classList.toggle('done', checked);
+        if(authed){
+          try {
+            fetch('/api/checkmarks', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ phone: phone, checked: checked })
+            }).catch(function(){});
+          } catch(_) {}
+        }
+      }
+      function normalizePhone(p){
+        var d = String(p||'').replace(/\D/g,'');
+        if(d.length === 11 && d[0] === '1') d = d.slice(1);
+        if(d.length !== 10) return null;
+        return d;
+      }
+      function formatPhone(d){
+        return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);
+      }
+      function wireAgent(container){
+        var input = container.querySelector('input[type="checkbox"]');
+        if(!input) return;
+        var phone = input.getAttribute('data-phone');
+        if(state[phone]){
+          input.checked = true;
+          container.classList.add('done');
+        }
+        input.addEventListener('change', function(){ setRow(phone, input.checked); });
+        var link = container.querySelector('a.phone');
+        if(link){ link.addEventListener('click', function(){ setRow(phone, true); }, {passive: true}); }
+        var phoneRow = container.querySelector('.phone-row');
+        if(phoneRow && !phoneRow.querySelector('.clear-btn')){
+          var clear = document.createElement('button');
+          clear.type = 'button';
+          clear.className = 'clear-btn';
+          clear.textContent = 'Uncheck';
+          clear.addEventListener('click', function(e){ e.preventDefault(); setRow(phone, false); });
+          phoneRow.appendChild(clear);
+        }
+      }
+      function createAgent(name, phoneDigits, brokerage){
+        var container = document.createElement('div');
+        container.className = 'agent';
+        var smsHref = 'sms:1'+phoneDigits;
+        container.innerHTML = `
+          <input type="checkbox" data-phone="${phoneDigits}" />
+          <div class="info">
+            <div class="name">${name}</div>
+            <div class="brokerage">${brokerage||''}</div>
+            <div class="phone-row">
+              <div class="phone-label">Tap to text:</div>
+              <a class="phone" href="${smsHref}">${formatPhone(phoneDigits)}</a>
+            </div>
+          </div>`;
+        return container;
+      }
+      function parseLine(line){
+        var phoneMatch = line.match(/(?:\+?1[\s\-\.]*)?\(?([2-9][0-9]{2})\)?[\s\-\.]*([0-9]{3})[\s\-\.]*([0-9]{4})/);
+        if(!phoneMatch) return null;
+        var phoneDigits = (phoneMatch[1]||'')+(phoneMatch[2]||'')+(phoneMatch[3]||'');
+        phoneDigits = normalizePhone(phoneDigits);
+        if(!phoneDigits) return null;
+        var cleaned = line.replace(phoneMatch[0],' ').replace(/[\s\-]+/g,' ').trim();
+        var parts = cleaned.split(/[|,;\t]/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length; });
+        var name = null, brokerage = null;
+        if(parts.length >= 2){
+          name = parts[0];
+          brokerage = parts.slice(1).join(', ');
+        } else if(parts.length === 1){
+          name = parts[0];
+        }
+        return { name: name || 'Unknown', phone: phoneDigits, brokerage: brokerage || '' };
       }
       document.addEventListener('DOMContentLoaded', function(){
-        var rows = document.querySelectorAll('.agent');
-        rows.forEach(function(container){
+        var rows = Array.from(document.querySelectorAll('.agent'));
+        var boundaryIndex = rows.findIndex(function(container){
+          var n = container.querySelector('.name');
+          return n && n.textContent.trim().toLowerCase() === 'jodie wyrick';
+        });
+        rows.forEach(function(container, idx){
           var input = container.querySelector('input[type="checkbox"]');
           if(!input) return;
           var phone = input.getAttribute('data-phone');
+          var nameEl = container.querySelector('.name');
+          if(nameEl && !container.querySelector('.brokerage')){
+            var b = document.createElement('div');
+            b.className = 'brokerage';
+            b.textContent = (boundaryIndex >= 0 && idx <= boundaryIndex)
+              ? 'Busch Realty Group'
+              : 'Keller Williams MS Gulf Coast - Biloxi';
+            nameEl.insertAdjacentElement('afterend', b);
+          }
           if(state[phone]){
             input.checked = true;
             container.classList.add('done');
@@ -146,6 +252,72 @@
             phoneRow.appendChild(clear);
           }
         });
+
+        var searchInput = document.getElementById('search');
+        if(searchInput){
+          searchInput.addEventListener('input', function(){
+            var q = searchInput.value.trim().toLowerCase();
+            Array.from(document.querySelectorAll('.agent')).forEach(function(container){
+              var nameText = (container.querySelector('.name')?.textContent || '').toLowerCase();
+              var brokerText = (container.querySelector('.brokerage')?.textContent || '').toLowerCase();
+              var match = !q || nameText.includes(q) || brokerText.includes(q);
+              container.style.display = match ? '' : 'none';
+            });
+          });
+        }
+
+        function applyServerCheckmarks(list){
+          list.forEach(function(item){
+            var phone = String(item.phone || '');
+            var checked = !!item.checked;
+            var input = document.querySelector('.agent input[data-phone="'+phone+'"]');
+            if(!input) return;
+            setRow(phone, checked);
+          });
+        }
+        function fetchServerCheckmarks(){
+          fetch('/api/checkmarks')
+            .then(function(r){ return r.ok ? r.json() : []; })
+            .then(function(data){ if(Array.isArray(data)) applyServerCheckmarks(data); })
+            .catch(function(){});
+        }
+        function initSync(){
+          fetchServerCheckmarks();
+          setInterval(fetchServerCheckmarks, 15000);
+          fetchAgents();
+        }
+
+        function fetchAgents(){
+          fetch('/api/agents')
+            .then(function(r){ return r.ok ? r.json() : []; })
+            .then(function(list){
+              if(!Array.isArray(list)) return;
+              var containerEl = document.querySelector('.container');
+              var existingPhones = new Set(Array.from(document.querySelectorAll('.agent input[data-phone]')).map(function(i){ return i.getAttribute('data-phone'); }));
+              list.forEach(function(item){
+                var phone = String(item.phone || '');
+                if(!phone || existingPhones.has(phone)) return;
+                var name = String(item.name || 'Unknown');
+                var brokerage = String(item.brokerage || '');
+                var el = createAgent(name, phone, brokerage);
+                containerEl.appendChild(el);
+                // apply check state if present in local storage
+                var input = el.querySelector('input[type="checkbox"]');
+                if(input){
+                  var checked = !!state[phone];
+                  input.checked = checked;
+                  el.classList.toggle('done', checked);
+                }
+              });
+            })
+            .catch(function(){});
+        }
+        function checkAuth(){
+          return fetch('/api/auth-check').then(function(r){ return r.ok }).catch(function(){ return false })
+        }
+        function showLogin(){ var o = document.getElementById('login-overlay'); if(o){ o.style.display = 'flex'; } }
+        function hideLogin(){ var o = document.getElementById('login-overlay'); if(o){ o.style.display = 'none'; } }
+        checkAuth().then(function(ok){ if(ok){ authed = true; hideLogin(); initSync(); } else { showLogin(); } });
       });
     })();
   </script>
@@ -154,7 +326,34 @@
   <header>
     <h1>Agent SMS Tracker</h1>
     <div class="subtitle">Tap the number to text · check the box after you’ve messaged them.</div>
+    <div class="search">
+      <input id="search" type="text" inputmode="search" placeholder="Search by name or brokerage" aria-label="Search agents" />
+    </div>
   </header>
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-box">
+      <div style="font-size:16px;font-weight:600;color:#e5e7eb;">Sign In</div>
+      <input id="login-user" type="text" placeholder="Username" autocomplete="username">
+      <input id="login-pass" type="password" placeholder="Password" autocomplete="current-password">
+      <button id="login-btn" type="button">Login</button>
+      <div id="login-error" style="color:#f87171;font-size:12px;display:none;">Invalid credentials</div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      var btn = document.getElementById('login-btn');
+      if(btn){
+        btn.addEventListener('click', function(){
+          var u = document.getElementById('login-user').value.trim();
+          var p = document.getElementById('login-pass').value.trim();
+          fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username:u, password:p }) })
+            .then(function(r){ if(r.ok){ return true } throw new Error('bad') })
+            .then(function(){ window.location.reload() })
+            .catch(function(){ var e = document.getElementById('login-error'); if(e) e.style.display='block' })
+        });
+      }
+    })();
+  </script>
   <div class="container">
     <div class="agent">
       <input type="checkbox" data-phone="2286690211" />

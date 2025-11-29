@@ -1,0 +1,8 @@
+{
+  "name": "realestateagentcoldleads",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/postgres": "^0.7.0"
+  }
+}
