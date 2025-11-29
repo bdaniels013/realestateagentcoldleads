@@ -119,6 +119,11 @@
     .tab-btn { font-size: 13px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 999px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; }
     .tab-btn.active { background: #0ea5e9; color: #0b1220; border-color: #0ea5e9; }
     .badge { font-size: 12px; background: #0b1220; color: #e5e7eb; border: 1px solid #374151; border-radius: 999px; padding: 2px 8px; }
+    .script-btn { margin-left: auto; font-size: 13px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 6px 10px; }
+    .script-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.9); display: none; align-items: center; justify-content: center; z-index: 70; }
+    .script-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 520px; display: grid; gap: 10px; }
+    .script-box h2 { margin: 0; font-size: 16px; color: #e5e7eb; }
+    .script-box textarea { padding: 10px 12px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; min-height: 160px; }
     .login-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
     .login-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 360px; display: grid; gap: 10px; }
     .login-box input { padding: 8px 10px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; }
@@ -156,6 +161,16 @@
         var items = Array.from(activeEl.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done'); });
         items.sort(function(a,b){ return parseInt(a.dataset.order||'0',10) - parseInt(b.dataset.order||'0',10); });
         items.forEach(function(el){ activeEl.appendChild(el); });
+      }
+      function getScript(){
+        var s = localStorage.getItem('smsScript');
+        if(s && s.trim()) return s;
+        return 'Hey {name}, I\u2019m Blake Daniels. I build websites and do media and marketing to help people grow their business. I saw your profile on your brokerage\u2019s site. Do you have your own personal website or do you just use the brokerage site?';
+      }
+      function renderScript(data){
+        var tpl = getScript();
+        return tpl.replace(/\{name\}/g, data.name || '')
+                  .replace(/\{brokerage\}/g, data.brokerage || '');
       }
       function setRow(phone, checked){
         if(checked){ state[phone] = true; } else { delete state[phone]; }
@@ -203,13 +218,21 @@
         var input = container.querySelector('input[type="checkbox"]');
         if(!input) return;
         var phone = input.getAttribute('data-phone');
+        var nameText = (container.querySelector('.name')?.textContent || '').trim();
+        var brokerageText = (container.querySelector('.brokerage')?.textContent || '').trim();
         if(state[phone]){
           input.checked = true;
           container.classList.add('done');
         }
         input.addEventListener('change', function(){ setRow(phone, input.checked); });
           var link = container.querySelector('a.phone');
-          if(link){ link.addEventListener('click', function(){ setRow(phone, true); }, {passive: true}); }
+          if(link){ link.addEventListener('click', function(){
+            var body = renderScript({ name: nameText, brokerage: brokerageText });
+            var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            var href = isiOS ? ('sms:/open?addresses='+phone+'&body='+encodeURIComponent(body)) : ('sms:'+phone+'&body='+encodeURIComponent(body));
+            try { link.setAttribute('href', href); } catch(_) {}
+            setRow(phone, true);
+          }, {passive: true}); }
           var nameEl = container.querySelector('.name');
           if(nameEl){ nameEl.addEventListener('click', function(){ setRow(phone, true); }); }
         var phoneRow = container.querySelector('.phone-row');
@@ -551,7 +574,7 @@
             .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
             .then(function(){
               var el = createAgent(name || 'Unknown', phoneDigits, brokerage || '');
-              var containerEl = document.querySelector('.container');
+              var containerEl = document.getElementById('active');
               containerEl.appendChild(el);
               wireAgent(el);
               hideAdd();
@@ -590,7 +613,7 @@
           fetch('/api/agents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(items) })
             .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
             .then(function(){
-              var containerEl = document.querySelector('.container');
+              var containerEl = document.getElementById('active');
               var existingPhones = new Set(Array.from(document.querySelectorAll('.agent input[data-phone]')).map(function(i){ return i.getAttribute('data-phone'); }));
               items.forEach(function(it){ if(existingPhones.has(it.phone)) return; var el = createAgent(it.name, it.phone, it.brokerage); containerEl.appendChild(el); wireAgent(el); existingPhones.add(it.phone); });
               document.getElementById('bulk-lines').value='';
@@ -599,6 +622,22 @@
             })
             .catch(function(){ if(err){ err.style.display='block'; err.textContent='Could not add batch (check login)'; } });
         });
+      }
+      var openScript = document.getElementById('open-script');
+      var scriptOverlay = document.getElementById('script-overlay');
+      var scriptText = document.getElementById('script-text');
+      var scriptSave = document.getElementById('script-save');
+      var scriptCancel = document.getElementById('script-cancel');
+      function getScript(){
+        var s = localStorage.getItem('smsScript');
+        if(s && s.trim()) return s;
+        return 'Hey {name}, I\u2019m Blake Daniels. I build websites and do media and marketing to help people grow their business. I saw your profile on your brokerage\u2019s site. Do you have your own personal website or do you just use the brokerage site?';
+      }
+      if(openScript && scriptOverlay && scriptText && scriptSave && scriptCancel){
+        scriptText.value = getScript();
+        openScript.addEventListener('click', function(){ scriptText.value = getScript(); scriptOverlay.style.display = 'flex'; });
+        scriptCancel.addEventListener('click', function(){ scriptOverlay.style.display = 'none'; });
+        scriptSave.addEventListener('click', function(){ localStorage.setItem('smsScript', scriptText.value || ''); scriptOverlay.style.display = 'none'; });
       }
     })();
   </script>
@@ -613,6 +652,7 @@
     <div class="tabs">
       <button id="tab-show-active" class="tab-btn active" type="button">Active <span id="count-active" class="badge">0</span></button>
       <button id="tab-show-completed" class="tab-btn" type="button">Completed <span id="count-completed" class="badge">0</span></button>
+      <button id="open-script" class="script-btn" type="button">Script</button>
     </div>
   </header>
   <div id="login-overlay" class="login-overlay">
@@ -664,6 +704,16 @@
     </div>
   </div>
   <button id="add-agent-fab" class="fab" aria-label="Add Agent">+</button>
+  <div id="script-overlay" class="script-overlay" style="display:none;">
+    <div class="script-box">
+      <h2>Message Script</h2>
+      <textarea id="script-text" placeholder="Use {name} and {brokerage} where needed."></textarea>
+      <div class="add-actions">
+        <button id="script-cancel" type="button" class="btn">Cancel</button>
+        <button id="script-save" type="button" class="btn">Save</button>
+      </div>
+    </div>
+  </div>
   <div class="section-title">Completed</div>
   <div id="completed" class="container" style="display:none;"></div>
   <div id="active" class="container">
