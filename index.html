@@ -115,6 +115,10 @@
       color: #e5e7eb;
       font-size: 14px;
     }
+    .tabs { display: flex; gap: 8px; margin-top: 8px; }
+    .tab-btn { font-size: 13px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 999px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; }
+    .tab-btn.active { background: #0ea5e9; color: #0b1220; border-color: #0ea5e9; }
+    .badge { font-size: 12px; background: #0b1220; color: #e5e7eb; border: 1px solid #374151; border-radius: 999px; padding: 2px 8px; }
     .login-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
     .login-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 360px; display: grid; gap: 10px; }
     .login-box input { padding: 8px 10px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; }
@@ -138,6 +142,14 @@
       try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
       var authed = false;
       var maxOrder = 0;
+      function updateCounts(){
+        var a = document.querySelectorAll('#active .agent').length;
+        var c = document.querySelectorAll('#completed .agent').length;
+        var ca = document.getElementById('count-active');
+        var cc = document.getElementById('count-completed');
+        if(ca) ca.textContent = String(a);
+        if(cc) cc.textContent = String(c);
+      }
       function setRow(phone, checked){
         if(checked){ state[phone] = true; } else { delete state[phone]; }
         localStorage.setItem(KEY, JSON.stringify(state));
@@ -159,6 +171,7 @@
             activeList.insertBefore(container, before || (candidates.length ? candidates[candidates.length-1].nextSibling : activeList.firstChild));
           }
         }
+        updateCounts();
         if(authed){
           try {
             fetch('/api/checkmarks', {
@@ -284,12 +297,14 @@
             phoneRow.appendChild(clear);
           }
         });
+        updateCounts();
 
         var searchInput = document.getElementById('search');
         if(searchInput){
           searchInput.addEventListener('input', function(){
             var q = searchInput.value.trim().toLowerCase();
-            Array.from(document.querySelectorAll('.agent')).forEach(function(container){
+            var current = (document.getElementById('completed').style.display === 'none') ? document.getElementById('active') : document.getElementById('completed');
+            Array.from(current.querySelectorAll('.agent')).forEach(function(container){
               var nameText = (container.querySelector('.name')?.textContent || '').toLowerCase();
               var brokerText = (container.querySelector('.brokerage')?.textContent || '').toLowerCase();
               var match = !q || nameText.includes(q) || brokerText.includes(q);
@@ -306,6 +321,7 @@
             if(!input) return;
             setRow(phone, checked);
           });
+          updateCounts();
         }
         function fetchServerCheckmarks(){
           fetch('/api/checkmarks')
@@ -322,7 +338,7 @@
         function fetchAgents(){
           fetch('/api/agents')
             .then(function(r){ return r.ok ? r.json() : []; })
-            .then(function(list){
+          .then(function(list){
               if(!Array.isArray(list)) return;
               var containerEl = document.querySelector('.container');
               var existingPhones = new Set(Array.from(document.querySelectorAll('.agent input[data-phone]')).map(function(i){ return i.getAttribute('data-phone'); }));
@@ -346,6 +362,7 @@
                   el.classList.toggle('done', initialChecked);
                 }
               });
+              updateCounts();
             })
             .catch(function(){});
         }
@@ -354,6 +371,28 @@
         }
         function showLogin(){ var o = document.getElementById('login-overlay'); if(o){ o.style.display = 'flex'; } }
         function hideLogin(){ var o = document.getElementById('login-overlay'); if(o){ o.style.display = 'none'; } }
+        function showTab(active){
+          var activeEl = document.getElementById('active');
+          var completedEl = document.getElementById('completed');
+          var btnA = document.getElementById('tab-show-active');
+          var btnC = document.getElementById('tab-show-completed');
+          if(active){
+            if(activeEl) activeEl.style.display='';
+            if(completedEl) completedEl.style.display='none';
+            if(btnA) btnA.classList.add('active');
+            if(btnC) btnC.classList.remove('active');
+          } else {
+            if(activeEl) activeEl.style.display='none';
+            if(completedEl) completedEl.style.display='';
+            if(btnA) btnA.classList.remove('active');
+            if(btnC) btnC.classList.add('active');
+          }
+        }
+        var tabA = document.getElementById('tab-show-active');
+        var tabC = document.getElementById('tab-show-completed');
+        if(tabA) tabA.addEventListener('click', function(){ showTab(true); });
+        if(tabC) tabC.addEventListener('click', function(){ showTab(false); });
+        showTab(true);
         checkAuth().then(function(ok){ if(ok){ authed = true; hideLogin(); initSync(); } else { showLogin(); } });
 
         var fab = document.getElementById('add-agent-fab');
@@ -406,6 +445,7 @@
                 document.getElementById('add-phone').value='';
                 document.getElementById('add-brokerage').value='';
                 if(err){ err.style.display='none'; }
+                updateCounts();
               })
               .catch(function(e){ if(err){ err.style.display='block'; err.textContent = e && e.message==='server' ? 'Server error (DB not ready). Try again after redeploy.' : 'Could not add agent (check login)'; } if(e && e.message==='unauthorized'){ showLogin(); } });
           });
@@ -443,6 +483,7 @@
                 document.getElementById('bulk-lines').value='';
                 if(err){ err.style.display='none'; }
                 var o = document.getElementById('add-overlay'); if(o) o.style.display='none';
+                updateCounts();
               })
               .catch(function(e){ if(err){ err.style.display='block'; err.textContent = e && e.message==='server' ? 'Server error (DB not ready). Try again after redeploy.' : 'Could not add batch (check login)'; } if(e && e.message==='unauthorized'){ showLogin(); } });
           });
@@ -560,6 +601,10 @@
     <div class="search">
       <input id="search" type="text" inputmode="search" placeholder="Search by name or brokerage" aria-label="Search agents" />
     </div>
+    <div class="tabs">
+      <button id="tab-show-active" class="tab-btn active" type="button">Active <span id="count-active" class="badge">0</span></button>
+      <button id="tab-show-completed" class="tab-btn" type="button">Completed <span id="count-completed" class="badge">0</span></button>
+    </div>
   </header>
   <div id="login-overlay" class="login-overlay">
     <div class="login-box">
@@ -611,8 +656,8 @@
   </div>
   <button id="add-agent-fab" class="fab" aria-label="Add Agent">+</button>
   <div class="section-title">Completed</div>
-  <div id="completed" class="container"></div>
-  <div class="container">
+  <div id="completed" class="container" style="display:none;"></div>
+  <div id="active" class="container">
     
     <div class="agent">
       <input type="checkbox" data-phone="2286690211" />
