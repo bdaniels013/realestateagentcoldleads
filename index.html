@@ -422,7 +422,7 @@
           }
           wireAgent(container);
         });
-        resortActive();
+        applyCurrentSort();
         updateCounts();
 
         var searchInput = document.getElementById('search');
@@ -587,7 +587,7 @@
                 document.getElementById('add-phone').value='';
                 document.getElementById('add-brokerage').value='';
                 if(err){ err.style.display='none'; }
-                resortActive(); updateCounts();
+                applyCurrentSort(); updateCounts();
               })
               .catch(function(e){ if(err){ err.style.display='block'; err.textContent = e && e.message==='server' ? 'Server error (DB not ready). Try again after redeploy.' : 'Could not add agent (check login)'; } if(e && e.message==='unauthorized'){ showLogin(); } });
           });
@@ -625,7 +625,7 @@
                 document.getElementById('bulk-lines').value='';
                 if(err){ err.style.display='none'; }
                 var o = document.getElementById('add-overlay'); if(o) o.style.display='none';
-                updateCounts();
+                applyCurrentSort(); updateCounts();
               })
               .catch(function(e){ if(err){ err.style.display='block'; err.textContent = e && e.message==='server' ? 'Server error (DB not ready). Try again after redeploy.' : 'Could not add batch (check login)'; } if(e && e.message==='unauthorized'){ showLogin(); } });
           });
