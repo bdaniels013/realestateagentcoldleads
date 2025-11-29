@@ -517,7 +517,7 @@
                   el.classList.toggle('done', initialChecked);
                 }
               });
-              resortActive(); updateCounts();
+              applyCurrentSort(); updateCounts();
             })
             .catch(function(){});
         }
