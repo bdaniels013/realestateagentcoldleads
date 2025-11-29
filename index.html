@@ -12,7 +12,9 @@
       background: #0f172a;
       color: #e5e7eb;
       -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
     }
+    * { box-sizing: border-box; }
     header {
       position: sticky;
       top: 0;
@@ -66,6 +68,7 @@
       justify-content: space-between;
       gap: 10px;
       margin-top: 2px;
+      flex-wrap: wrap;
     }
     .phone-label {
       font-size: 11px;
@@ -116,7 +119,7 @@
       color: #e5e7eb;
       font-size: 14px;
     }
-    .tabs { display: flex; gap: 8px; margin-top: 8px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
     .tab-btn { font-size: 13px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 999px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; }
     .tab-btn.active { background: #0ea5e9; color: #0b1220; border-color: #0ea5e9; }
     .badge { font-size: 12px; background: #0b1220; color: #e5e7eb; border: 1px solid #374151; border-radius: 999px; padding: 2px 8px; }
@@ -155,7 +158,8 @@
       h1 { font-size: 16px; }
       .subtitle { font-size: 12px; }
       .search input { font-size: 16px; padding: 10px 12px; }
-      .tab-btn { font-size: 14px; padding: 8px 14px; }
+      .tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .tab-btn, .script-btn { font-size: 14px; padding: 10px 14px; width: 100%; }
       .badge { font-size: 12px; }
       .agent { padding: 16px 18px; }
       .name { font-size: 16px; }
