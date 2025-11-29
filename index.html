@@ -529,13 +529,13 @@
         var scriptTitle = document.getElementById('script-title');
         var scriptText = document.getElementById('script-text');
         var scriptSave = document.getElementById('script-save');
-        var scriptCancel = document.getElementById('script-cancel');
+        var scriptClose = document.getElementById('script-close');
+        var scriptAdd = document.getElementById('script-add');
+        var scriptEditor = document.getElementById('script-editor');
+        var scriptCancelEdit = document.getElementById('script-cancel-edit');
         function getScript(){ var s = localStorage.getItem('smsScript'); return (s && s.trim()) ? s : 'Hey {name}, I\u2019m Blake Daniels. I build websites and do media and marketing to help people grow their business. I saw your profile on your brokerage\u2019s site. Do you have your own personal website or do you just use the brokerage site?'; }
-        if(openScript && scriptOverlay && scriptText && scriptSave && scriptCancel){
-          openScript.addEventListener('click', function(){ scriptText.value = getScript(); if(scriptTitle) scriptTitle.value=''; scriptOverlay.style.display = 'flex'; });
-          scriptCancel.addEventListener('click', function(){ scriptOverlay.style.display = 'none'; });
-          scriptSave.addEventListener('click', function(){ var title = (scriptTitle && scriptTitle.value || '').trim() || 'Untitled'; var text = (scriptText.value||'').trim(); if(!text){ scriptOverlay.style.display='none'; return } fetch('/api/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:title, text:text }) }).then(function(r){ return r.ok ? r.json() : null }).then(function(){ scriptOverlay.style.display='none'; fetchTemplates(); }).catch(function(){ scriptOverlay.style.display='none'; }); });
-        }
+        function renderTemplateList(){ var box = document.getElementById('script-list'); if(!box) return; box.innerHTML=''; templates.forEach(function(t){ var row=document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center'; var nameSpan=document.createElement('span'); nameSpan.textContent=t.name; nameSpan.style.flex='1'; var editBtn=document.createElement('button'); editBtn.className='btn'; editBtn.textContent='Edit'; var delBtn=document.createElement('button'); delBtn.className='btn'; delBtn.textContent='Delete'; editBtn.addEventListener('click', function(){ scriptTitle.value=t.name; scriptText.value=t.text; scriptText.dataset.editId=t.id; if(scriptEditor) scriptEditor.style.display='grid'; }); delBtn.addEventListener('click', function(){ fetch('/api/templates?id='+encodeURIComponent(t.id), { method:'DELETE' }).then(function(r){ return r.ok }).then(function(){ return fetch('/api/templates'); }).then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates=Array.isArray(data)?data:[]; renderTemplateList(); }).catch(function(){}); }); row.appendChild(nameSpan); row.appendChild(editBtn); row.appendChild(delBtn); box.appendChild(row); }); }
+        if(openScript && scriptOverlay && scriptText && scriptSave && scriptClose){ openScript.addEventListener('click', function(){ fetch('/api/templates').then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates=Array.isArray(data)?data:[]; renderTemplateList(); }); scriptTitle.value=''; scriptText.value=''; scriptText.dataset.editId=''; if(scriptEditor) scriptEditor.style.display='none'; scriptOverlay.style.display='flex'; }); if(scriptAdd){ scriptAdd.addEventListener('click', function(){ scriptTitle.value=''; scriptText.value=''; scriptText.dataset.editId=''; if(scriptEditor) scriptEditor.style.display='grid'; }); } if(scriptCancelEdit){ scriptCancelEdit.addEventListener('click', function(){ if(scriptEditor) scriptEditor.style.display='none'; }); } scriptClose.addEventListener('click', function(){ scriptOverlay.style.display='none'; }); scriptSave.addEventListener('click', function(){ var title=(scriptTitle.value||'').trim()||'Untitled'; var text=(scriptText.value||'').trim(); if(!text){ return } var payload={ name:title, text:text }; var editId=scriptText.dataset.editId||''; if(editId) payload.id=editId; fetch('/api/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(function(r){ return r.ok ? r.json() : null }).then(function(){ return fetch('/api/templates'); }).then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates=Array.isArray(data)?data:[]; renderTemplateList(); if(scriptEditor) scriptEditor.style.display='none'; }).catch(function(){}); }); }
 
         var fab = document.getElementById('add-agent-fab');
         if(fab){ fab.addEventListener('click', function(){ var o = document.getElementById('add-overlay'); if(o) o.style.display = 'flex'; }); }
@@ -2894,53 +2894,5 @@
     </div>
     </div>
   </div>
-  <script>
-    const items = document.querySelectorAll('.agent');
-    items.forEach(item => {
-      const checkbox = item.querySelector('input[type="checkbox"]');
-      const phone = checkbox.getAttribute('data-phone');
-      const key = 'agent_texted_' + phone;
-
-      // Restore state
-      const saved = localStorage.getItem(key);
-      if (saved === '1') {
-        checkbox.checked = true;
-        item.classList.add('done');
-      }
-
-      checkbox.addEventListener('change', () => {
-        if (checkbox.checked) {
-          localStorage.setItem(key, '1');
-          item.classList.add('done');
-        } else {
-          localStorage.setItem(key, '0');
-          item.classList.remove('done');
-        }
-      });
-    });
-  </script>
-</body>
-</html>
-        // Sort controls
-        var sortName = document.getElementById('sort-name');
-        var sortBrokerage = document.getElementById('sort-brokerage');
-        function setSortMode(mode){
-          var activeEl = document.getElementById('active');
-          var completedEl = document.getElementById('completed');
-          if(activeEl) sortList(activeEl, mode);
-          if(completedEl) sortList(completedEl, mode);
-          if(sortName && sortBrokerage){
-            sortName.classList.toggle('active', mode==='name');
-            sortBrokerage.classList.toggle('active', mode==='brokerage');
-          }
-          localStorage.setItem('sortMode', mode);
-        }
-        var savedSort = localStorage.getItem('sortMode') || 'name';
-        setSortMode(savedSort);
-        if(sortName) sortName.addEventListener('click', function(){ setSortMode('name'); });
-        if(sortBrokerage) sortBrokerage.addEventListener('click', function(){ setSortMode('brokerage'); });
-
-        // Auto-hide header on scroll
-        var lastY = window.scrollY; var headerEl = document.querySelector('header');
-        function onScroll(){ var y = window.scrollY; if(y > lastY + 10){ headerEl && headerEl.classList.add('header-hidden'); } else if(y < lastY - 10){ headerEl && headerEl.classList.remove('header-hidden'); } lastY = y; }
-        window.addEventListener('scroll', onScroll, { passive: true });
+  </body>
+  </html>
