@@ -24,7 +24,7 @@ async function ensureAgentsTable(){
   try {
     const conn = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
     if (conn) {
-      const client = new PgClient({ connectionString: conn })
+      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
       await client.connect()
       await client.query('CREATE TABLE IF NOT EXISTS agents (id serial primary key, name text not null, phone text unique not null, brokerage text)')
       await client.end()
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      const client = new PgClient({ connectionString: conn })
+      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
       await client.connect()
       const r = await client.query('SELECT name, phone, brokerage FROM agents ORDER BY name')
       await client.end()
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
       const items = Array.isArray(body) ? body : [body]
       const inserted = []
       const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      const client = new PgClient({ connectionString: conn })
+      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
       await client.connect()
       for (const it of items) {
         const name = String(it.name || 'Unknown').trim()

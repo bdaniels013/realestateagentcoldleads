@@ -24,7 +24,7 @@ async function ensureCheckmarksTable(){
   try {
     const conn = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
     if (conn) {
-      const client = new PgClient({ connectionString: conn })
+      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
       await client.connect()
       await client.query('CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())')
       await client.end()
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      const client = new PgClient({ connectionString: conn })
+      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
       await client.connect()
       const r = await client.query('SELECT phone, checked, updated_at FROM checkmarks')
       await client.end()
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
         return
       }
       const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      const client = new PgClient({ connectionString: conn })
+      const client = new PgClient({ connectionString: conn, ssl: { rejectUnauthorized: false } })
       await client.connect()
       await client.query('INSERT INTO checkmarks(phone, checked, updated_at) VALUES($1, $2, now()) ON CONFLICT (phone) DO UPDATE SET checked=$2, updated_at=now()', [phone, checked])
       await client.end()
