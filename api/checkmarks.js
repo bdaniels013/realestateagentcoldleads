@@ -1,4 +1,5 @@
-import { sql, createClient } from '@vercel/postgres'
+import { sql } from '@vercel/postgres'
+import { Client as PgClient } from 'pg'
 import { createHmac } from 'crypto'
 
 function parseCookie(h){
@@ -25,9 +26,9 @@ export default async function handler(req, res) {
   try {
     const conn = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
     if (conn) {
-      const client = createClient({ connectionString: conn })
+      const client = new PgClient({ connectionString: conn })
       await client.connect()
-      await client.sql`CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())`
+      await client.query('CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())')
       await client.end()
     } else {
       await sql`CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())`
