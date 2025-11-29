@@ -340,7 +340,7 @@
             .then(function(r){ return r.ok ? r.json() : []; })
           .then(function(list){
               if(!Array.isArray(list)) return;
-              var containerEl = document.querySelector('.container');
+              var containerEl = document.getElementById('active');
               var existingPhones = new Set(Array.from(document.querySelectorAll('.agent input[data-phone]')).map(function(i){ return i.getAttribute('data-phone'); }));
               list.forEach(function(item){
                 var phone = String(item.phone || '');
@@ -437,7 +437,7 @@
               .then(function(r){ if(r.status===401) throw new Error('unauthorized'); if(r.status>=500) throw new Error('server'); if(!r.ok) throw new Error('bad'); return r.json(); })
               .then(function(){
                 var el = createAgent(name || 'Unknown', phoneDigits, brokerage || '');
-                var containerEl = document.querySelector('.container');
+                var containerEl = document.getElementById('active');
                 containerEl.appendChild(el);
                 wireAgent(el);
                 var o = document.getElementById('add-overlay'); if(o) o.style.display='none';
@@ -477,7 +477,7 @@
             fetch('/api/agents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(items) })
               .then(function(r){ if(r.status===401) throw new Error('unauthorized'); if(r.status>=500) throw new Error('server'); if(!r.ok) throw new Error('bad'); return r.json(); })
               .then(function(){
-                var containerEl = document.querySelector('.container');
+                var containerEl = document.getElementById('active');
                 var existingPhones = new Set(Array.from(document.querySelectorAll('.agent input[data-phone]')).map(function(i){ return i.getAttribute('data-phone'); }));
                 items.forEach(function(it){ if(existingPhones.has(it.phone)) return; var el = createAgent(it.name, it.phone, it.brokerage); containerEl.appendChild(el); wireAgent(el); existingPhones.add(it.phone); });
                 document.getElementById('bulk-lines').value='';
