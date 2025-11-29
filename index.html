@@ -150,6 +150,13 @@
         if(ca) ca.textContent = String(a);
         if(cc) cc.textContent = String(c);
       }
+      function resortActive(){
+        var activeEl = document.getElementById('active');
+        if(!activeEl) return;
+        var items = Array.from(activeEl.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done'); });
+        items.sort(function(a,b){ return parseInt(a.dataset.order||'0',10) - parseInt(b.dataset.order||'0',10); });
+        items.forEach(function(el){ activeEl.appendChild(el); });
+      }
       function setRow(phone, checked){
         if(checked){ state[phone] = true; } else { delete state[phone]; }
         localStorage.setItem(KEY, JSON.stringify(state));
@@ -159,7 +166,7 @@
         var cb = container && container.querySelector('input[type="checkbox"]');
         if(cb) cb.checked = checked;
         if(container) container.classList.toggle('done', checked);
-        var activeList = document.querySelector('.container');
+        var activeList = document.getElementById('active');
         var completedList = document.getElementById('completed');
         if(container){
           if(checked && completedList){
@@ -169,6 +176,7 @@
             var candidates = Array.from(activeList.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done') && el !== container; });
             var before = candidates.find(function(el){ return parseInt(el.dataset.order || '0', 10) > order; });
             activeList.insertBefore(container, before || (candidates.length ? candidates[candidates.length-1].nextSibling : activeList.firstChild));
+            resortActive();
           }
         }
         updateCounts();
@@ -297,6 +305,7 @@
             phoneRow.appendChild(clear);
           }
         });
+        resortActive();
         updateCounts();
 
         var searchInput = document.getElementById('search');
@@ -362,7 +371,7 @@
                   el.classList.toggle('done', initialChecked);
                 }
               });
-              updateCounts();
+              resortActive(); updateCounts();
             })
             .catch(function(){});
         }
@@ -445,7 +454,7 @@
                 document.getElementById('add-phone').value='';
                 document.getElementById('add-brokerage').value='';
                 if(err){ err.style.display='none'; }
-                updateCounts();
+                resortActive(); updateCounts();
               })
               .catch(function(e){ if(err){ err.style.display='block'; err.textContent = e && e.message==='server' ? 'Server error (DB not ready). Try again after redeploy.' : 'Could not add agent (check login)'; } if(e && e.message==='unauthorized'){ showLogin(); } });
           });
