@@ -72,6 +72,14 @@ export default async function handler(req, res){
       res.status(200).json({ inserted })
       return
     }
+    if(req.method==='DELETE'){
+      const url = new URL(req.url, 'http://x')
+      const id = url.searchParams.get('id')
+      if(!id){ res.status(400).json({ error:'invalid_id' }); return }
+      await client.query('DELETE FROM templates WHERE id=$1', [id])
+      res.status(200).json({ ok:true })
+      return
+    }
     res.status(405).json({ error:'method_not_allowed' })
   }catch(e){
     console.error('templates API error', e && e.message ? e.message : e)
@@ -80,4 +88,3 @@ export default async function handler(req, res){
     await client.end()
   }
 }
-

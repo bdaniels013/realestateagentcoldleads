@@ -729,13 +729,29 @@
       }
       if(openScript && scriptOverlay && scriptText && scriptSave && scriptCancel){
         scriptText.value = getScript();
-        openScript.addEventListener('click', function(){ scriptText.value = getScript(); scriptTitle.value=''; scriptOverlay.style.display = 'flex'; });
+        function renderTemplateList(){
+          var box = document.getElementById('script-list'); if(!box) return;
+          box.innerHTML = '';
+          templates.forEach(function(t){
+            var row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center';
+            var nameSpan = document.createElement('span'); nameSpan.textContent = t.name; nameSpan.style.flex='1';
+            var editBtn = document.createElement('button'); editBtn.className='btn'; editBtn.textContent='Edit';
+            var delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.textContent='Delete';
+            editBtn.addEventListener('click', function(){ scriptTitle.value=t.name; scriptText.value=t.text; scriptText.dataset.editId = t.id; });
+            delBtn.addEventListener('click', function(){ fetch('/api/templates?id='+encodeURIComponent(t.id), { method:'DELETE' }).then(function(r){ return r.ok }).then(function(){ return fetch('/api/templates'); }).then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates = Array.isArray(data)?data:[]; renderTemplateList(); }).catch(function(){}); });
+            row.appendChild(nameSpan); row.appendChild(editBtn); row.appendChild(delBtn); box.appendChild(row);
+          });
+        }
+        openScript.addEventListener('click', function(){ fetch('/api/templates').then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates = Array.isArray(data)?data:[]; renderTemplateList(); }); scriptText.value = getScript(); scriptTitle.value=''; scriptText.dataset.editId=''; scriptOverlay.style.display = 'flex'; });
         scriptCancel.addEventListener('click', function(){ scriptOverlay.style.display = 'none'; });
         scriptSave.addEventListener('click', function(){
           var title = (scriptTitle.value||'').trim() || 'Untitled';
           var text = (scriptText.value||'').trim();
           if(!text){ scriptOverlay.style.display='none'; return }
-          fetch('/api/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:title, text:text }) })
+          var payload = { name:title, text:text };
+          var editId = scriptText.dataset.editId || '';
+          if(editId) payload.id = editId;
+          fetch('/api/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
             .then(function(r){ return r.ok ? r.json() : null })
             .then(function(){ scriptOverlay.style.display='none'; })
             .catch(function(){ scriptOverlay.style.display='none'; });
