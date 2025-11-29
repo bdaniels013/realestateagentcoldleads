@@ -21,8 +21,7 @@ function isAuthed(req){
   return sig === expect
 }
 
-export default async function handler(req, res) {
-  if(!isAuthed(req)){ res.status(401).json({ error: 'unauthorized' }); return }
+async function ensureAgentsTable(){
   try {
     const conn = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
     if (conn) {
@@ -33,18 +32,37 @@ export default async function handler(req, res) {
     } else {
       await sql`CREATE TABLE IF NOT EXISTS agents (id serial primary key, name text not null, phone text unique not null, brokerage text)`
     }
-  } catch (e) {
-    // ignore DDL errors (e.g., pgbouncer); assume tables exist or will be created manually
-  }
+  } catch (_) { /* ignore */ }
+}
+
+function readJson(req){
+  return new Promise((resolve)=>{
+    let data=''
+    req.on('data', (chunk)=>{ data += chunk })
+    req.on('end', ()=>{
+      try { resolve(JSON.parse(data || '{}')) } catch { resolve({ __parse_error: true }) }
+    })
+  })
+}
+
+export default async function handler(req, res) {
+  if(!isAuthed(req)){ res.status(401).json({ error: 'unauthorized' }); return }
+  await ensureAgentsTable()
 
   if (req.method === 'GET') {
-    const { rows } = await sql`SELECT name, phone, brokerage FROM agents ORDER BY name`
-    res.status(200).json(rows)
+    try {
+      const { rows } = await sql`SELECT name, phone, brokerage FROM agents ORDER BY name`
+      res.status(200).json(rows)
+    } catch (e) {
+      // table missing or other error → return empty list to avoid 500
+      res.status(200).json([])
+    }
     return
   }
   if (req.method === 'POST') {
     try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+      const body = await readJson(req)
+      if (body && body.__parse_error) { res.status(400).json({ error: 'invalid_body' }); return }
       const items = Array.isArray(body) ? body : [body]
       const inserted = []
       for (const it of items) {

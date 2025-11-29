@@ -21,8 +21,7 @@ function isAuthed(req){
   return sig === expect
 }
 
-export default async function handler(req, res) {
-  if(!isAuthed(req)){ res.status(401).json({ error: 'unauthorized' }); return }
+async function ensureCheckmarksTable(){
   try {
     const conn = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
     if (conn) {
@@ -33,18 +32,36 @@ export default async function handler(req, res) {
     } else {
       await sql`CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())`
     }
-  } catch (e) {
-    // ignore DDL errors
-  }
+  } catch (_) { /* ignore */ }
+}
+
+function readJson(req){
+  return new Promise((resolve)=>{
+    let data=''
+    req.on('data', (chunk)=>{ data += chunk })
+    req.on('end', ()=>{
+      try { resolve(JSON.parse(data || '{}')) } catch { resolve({ __parse_error: true }) }
+    })
+  })
+}
+
+export default async function handler(req, res) {
+  if(!isAuthed(req)){ res.status(401).json({ error: 'unauthorized' }); return }
+  await ensureCheckmarksTable()
 
   if (req.method === 'GET') {
-    const { rows } = await sql`SELECT phone, checked, updated_at FROM checkmarks`
-    res.status(200).json(rows)
+    try {
+      const { rows } = await sql`SELECT phone, checked, updated_at FROM checkmarks`
+      res.status(200).json(rows)
+    } catch (e) {
+      res.status(200).json([])
+    }
     return
   }
   if (req.method === 'POST') {
     try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+      const body = await readJson(req)
+      if (body && body.__parse_error) { res.status(400).json({ error: 'invalid_body' }); return }
       let phone = String(body.phone || '').replace(/\D/g, '')
       const checked = Boolean(body.checked)
       if (phone.length === 11 && phone.startsWith('1')) phone = phone.slice(1)
