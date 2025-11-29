@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres'
+import { sql, createClient } from '@vercel/postgres'
 import { createHmac } from 'crypto'
 
 function parseCookie(h){
@@ -22,7 +22,19 @@ function isAuthed(req){
 
 export default async function handler(req, res) {
   if(!isAuthed(req)){ res.status(401).json({ error: 'unauthorized' }); return }
-  await sql`CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())`
+  try {
+    const conn = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
+    if (conn) {
+      const client = createClient({ connectionString: conn })
+      await client.connect()
+      await client.sql`CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())`
+      await client.end()
+    } else {
+      await sql`CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())`
+    }
+  } catch (e) {
+    // ignore DDL errors
+  }
 
   if (req.method === 'GET') {
     const { rows } = await sql`SELECT phone, checked, updated_at FROM checkmarks`
