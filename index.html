@@ -35,7 +35,8 @@
       padding: 12px 8px 24px 8px;
     }
     .agent {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 10px;
       padding: 10px 12px;
@@ -195,6 +196,22 @@
         var items = Array.from(activeEl.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done'); });
         items.sort(function(a,b){ return parseInt(a.dataset.order||'0',10) - parseInt(b.dataset.order||'0',10); });
         items.forEach(function(el){ activeEl.appendChild(el); });
+      }
+      function sortList(container, mode){
+        var nodes = Array.from(container.querySelectorAll('.agent'));
+        nodes.sort(function(a,b){
+          var nA = (a.querySelector('.name')?.textContent || '').toLowerCase();
+          var nB = (b.querySelector('.name')?.textContent || '').toLowerCase();
+          var brA = (a.querySelector('.brokerage')?.textContent || '').toLowerCase();
+          var brB = (b.querySelector('.brokerage')?.textContent || '').toLowerCase();
+          if(mode==='brokerage'){
+            var cmp = brA.localeCompare(brB);
+            return cmp !== 0 ? cmp : nA.localeCompare(nB);
+          } else {
+            return nA.localeCompare(nB);
+          }
+        });
+        nodes.forEach(function(el){ container.appendChild(el); });
       }
       function getScript(){
         var s = localStorage.getItem('smsScript');
@@ -721,13 +738,16 @@
       var scriptText = document.getElementById('script-text');
       var scriptTitle = document.getElementById('script-title');
       var scriptSave = document.getElementById('script-save');
-      var scriptCancel = document.getElementById('script-cancel');
+      var scriptClose = document.getElementById('script-close');
+      var scriptAdd = document.getElementById('script-add');
+      var scriptEditor = document.getElementById('script-editor');
+      var scriptCancelEdit = document.getElementById('script-cancel-edit');
       function getScript(){
         var s = localStorage.getItem('smsScript');
         if(s && s.trim()) return s;
         return 'Hey {name}, I\u2019m Blake Daniels. I build websites and do media and marketing to help people grow their business. I saw your profile on your brokerage\u2019s site. Do you have your own personal website or do you just use the brokerage site?';
       }
-      if(openScript && scriptOverlay && scriptText && scriptSave && scriptCancel){
+      if(openScript && scriptOverlay && scriptText && scriptSave && scriptClose){
         scriptText.value = getScript();
         function renderTemplateList(){
           var box = document.getElementById('script-list'); if(!box) return;
@@ -737,13 +757,15 @@
             var nameSpan = document.createElement('span'); nameSpan.textContent = t.name; nameSpan.style.flex='1';
             var editBtn = document.createElement('button'); editBtn.className='btn'; editBtn.textContent='Edit';
             var delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.textContent='Delete';
-            editBtn.addEventListener('click', function(){ scriptTitle.value=t.name; scriptText.value=t.text; scriptText.dataset.editId = t.id; });
+            editBtn.addEventListener('click', function(){ scriptTitle.value=t.name; scriptText.value=t.text; scriptText.dataset.editId = t.id; if(scriptEditor) scriptEditor.style.display='grid'; });
             delBtn.addEventListener('click', function(){ fetch('/api/templates?id='+encodeURIComponent(t.id), { method:'DELETE' }).then(function(r){ return r.ok }).then(function(){ return fetch('/api/templates'); }).then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates = Array.isArray(data)?data:[]; renderTemplateList(); }).catch(function(){}); });
             row.appendChild(nameSpan); row.appendChild(editBtn); row.appendChild(delBtn); box.appendChild(row);
           });
         }
-        openScript.addEventListener('click', function(){ fetch('/api/templates').then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates = Array.isArray(data)?data:[]; renderTemplateList(); }); scriptText.value = getScript(); scriptTitle.value=''; scriptText.dataset.editId=''; scriptOverlay.style.display = 'flex'; });
-        scriptCancel.addEventListener('click', function(){ scriptOverlay.style.display = 'none'; });
+        openScript.addEventListener('click', function(){ fetch('/api/templates').then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates = Array.isArray(data)?data:[]; renderTemplateList(); }); scriptTitle.value=''; scriptText.value=''; scriptText.dataset.editId=''; if(scriptEditor) scriptEditor.style.display='none'; scriptOverlay.style.display = 'flex'; });
+        if(scriptAdd){ scriptAdd.addEventListener('click', function(){ scriptTitle.value=''; scriptText.value=''; scriptText.dataset.editId=''; if(scriptEditor) scriptEditor.style.display='grid'; }); }
+        if(scriptCancelEdit){ scriptCancelEdit.addEventListener('click', function(){ if(scriptEditor) scriptEditor.style.display='none'; }); }
+        scriptClose.addEventListener('click', function(){ scriptOverlay.style.display = 'none'; });
         scriptSave.addEventListener('click', function(){
           var title = (scriptTitle.value||'').trim() || 'Untitled';
           var text = (scriptText.value||'').trim();
@@ -753,8 +775,10 @@
           if(editId) payload.id = editId;
           fetch('/api/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
             .then(function(r){ return r.ok ? r.json() : null })
-            .then(function(){ scriptOverlay.style.display='none'; })
-            .catch(function(){ scriptOverlay.style.display='none'; });
+            .then(function(){ return fetch('/api/templates'); })
+            .then(function(r){ return r.ok ? r.json() : []; })
+            .then(function(data){ templates = Array.isArray(data)?data:[]; renderTemplateList(); if(scriptEditor) scriptEditor.style.display='none'; })
+            .catch(function(){ /* ignore */ });
         });
       }
     })();
@@ -774,6 +798,10 @@
       <button id="toggle-picker" class="script-btn" type="button">Always Show Picker: On</button>
     </div>
   </header>
+  <div class="sort">
+    <button id="sort-name" class="sort-btn active" type="button">Sort: Name</button>
+    <button id="sort-brokerage" class="sort-btn" type="button">Sort: Brokerage</button>
+  </div>
   <div id="login-overlay" class="login-overlay">
     <div class="login-box">
       <div style="font-size:16px;font-weight:600;color:#e5e7eb;">Sign In</div>
@@ -826,11 +854,18 @@
   <div id="script-overlay" class="script-overlay" style="display:none;">
     <div class="script-box">
       <h2>Message Script</h2>
-      <input id="script-title" type="text" placeholder="Title (e.g., Intro A)" autocomplete="off">
-      <textarea id="script-text" placeholder="Use {name} and {brokerage} where needed."></textarea>
       <div class="add-actions">
-        <button id="script-cancel" type="button" class="btn">Cancel</button>
-        <button id="script-save" type="button" class="btn">Save</button>
+        <button id="script-add" type="button" class="btn">Add New</button>
+        <button id="script-close" type="button" class="btn">Close</button>
+      </div>
+      <div id="script-list" style="display:grid;gap:8px;"></div>
+      <div id="script-editor" style="display:none;">
+        <input id="script-title" type="text" placeholder="Title (e.g., Intro A)" autocomplete="off">
+        <textarea id="script-text" placeholder="Use {name} and {brokerage} where needed."></textarea>
+        <div class="add-actions">
+          <button id="script-cancel-edit" type="button" class="btn">Cancel Edit</button>
+          <button id="script-save" type="button" class="btn">Save</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2886,3 +2921,26 @@
   </script>
 </body>
 </html>
+        // Sort controls
+        var sortName = document.getElementById('sort-name');
+        var sortBrokerage = document.getElementById('sort-brokerage');
+        function setSortMode(mode){
+          var activeEl = document.getElementById('active');
+          var completedEl = document.getElementById('completed');
+          if(activeEl) sortList(activeEl, mode);
+          if(completedEl) sortList(completedEl, mode);
+          if(sortName && sortBrokerage){
+            sortName.classList.toggle('active', mode==='name');
+            sortBrokerage.classList.toggle('active', mode==='brokerage');
+          }
+          localStorage.setItem('sortMode', mode);
+        }
+        var savedSort = localStorage.getItem('sortMode') || 'name';
+        setSortMode(savedSort);
+        if(sortName) sortName.addEventListener('click', function(){ setSortMode('name'); });
+        if(sortBrokerage) sortBrokerage.addEventListener('click', function(){ setSortMode('brokerage'); });
+
+        // Auto-hide header on scroll
+        var lastY = window.scrollY; var headerEl = document.querySelector('header');
+        function onScroll(){ var y = window.scrollY; if(y > lastY + 10){ headerEl && headerEl.classList.add('header-hidden'); } else if(y < lastY - 10){ headerEl && headerEl.classList.remove('header-hidden'); } lastY = y; }
+        window.addEventListener('scroll', onScroll, { passive: true });
