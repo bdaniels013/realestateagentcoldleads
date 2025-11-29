@@ -118,6 +118,16 @@
     .login-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 360px; display: grid; gap: 10px; }
     .login-box input { padding: 8px 10px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; }
     .login-box button { font-size: 14px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 8px 10px; }
+    .fab { position: fixed; right: 16px; bottom: 20px; width: 52px; height: 52px; border-radius: 999px; background: #0ea5e9; color: #0b1220; font-size: 28px; border: none; box-shadow: 0 6px 20px rgba(14,165,233,0.25); z-index: 50; }
+    .fab:active { background: #38bdf8; }
+    .add-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.9); display: none; align-items: center; justify-content: center; z-index: 60; }
+    .add-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 380px; display: grid; gap: 10px; }
+    .add-box h2 { margin: 0; font-size: 16px; color: #e5e7eb; }
+    .add-box input { padding: 10px 12px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; }
+    .add-box textarea { padding: 10px 12px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; min-height: 120px; }
+    .add-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn { font-size: 14px; color: #e5e7eb; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; }
+    @media (hover: none) and (pointer: coarse) { .agent { padding: 12px 14px; } .agent input[type="checkbox"] { width: 22px; height: 22px; } .phone { display: inline-block; padding: 6px 8px; } }
   </style>
   <script>
     (function(){
@@ -321,6 +331,108 @@
       });
     })();
   </script>
+  <script>
+    (function(){
+      function showAdd(){ var o = document.getElementById('add-overlay'); if(o) o.style.display = 'flex'; }
+      function hideAdd(){ var o = document.getElementById('add-overlay'); if(o) o.style.display = 'none'; }
+      var fab = document.getElementById('add-agent-fab');
+      if(fab){ fab.addEventListener('click', function(){ showAdd(); }); }
+      var addBtn = document.getElementById('add-save');
+      var cancelBtn = document.getElementById('add-cancel');
+      if(cancelBtn){ cancelBtn.addEventListener('click', function(){ hideAdd(); }); }
+      var modeSingle = document.getElementById('mode-single');
+      var modeBulk = document.getElementById('mode-bulk');
+      var bulkContainer = document.getElementById('bulk-container');
+      function setMode(single){
+        var n = document.getElementById('add-name');
+        var p = document.getElementById('add-phone');
+        var s = document.getElementById('add-save');
+        var err = document.getElementById('add-error');
+        if(single){
+          if(n) n.style.display='';
+          if(p) p.style.display='';
+          if(s) s.style.display='';
+          if(err) err.style.display='none';
+          if(bulkContainer) bulkContainer.style.display='none';
+        } else {
+          if(n) n.style.display='none';
+          if(p) p.style.display='none';
+          if(s) s.style.display='none';
+          if(err) err.style.display='none';
+          if(bulkContainer) bulkContainer.style.display='';
+        }
+      }
+      if(modeSingle){ modeSingle.addEventListener('click', function(){ setMode(true); }); }
+      if(modeBulk){ modeBulk.addEventListener('click', function(){ setMode(false); }); }
+      setMode(true);
+      function cleanPhone(raw){
+        var d = String(raw||'').replace(/\D/g,'');
+        if(d.length === 11 && d[0] === '1') d = d.slice(1);
+        return d.length === 10 ? d : null;
+      }
+      if(addBtn){
+        addBtn.addEventListener('click', function(){
+          var name = document.getElementById('add-name').value.trim();
+          var phoneRaw = document.getElementById('add-phone').value.trim();
+          var brokerage = document.getElementById('add-brokerage').value.trim();
+          var phoneDigits = cleanPhone(phoneRaw);
+          var err = document.getElementById('add-error');
+          if(!phoneDigits){ if(err){ err.style.display='block'; err.textContent='Enter a valid 10-digit phone'; } return; }
+          fetch('/api/agents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:name, phone:phoneDigits, brokerage:brokerage }) })
+            .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
+            .then(function(){
+              var el = createAgent(name || 'Unknown', phoneDigits, brokerage || '');
+              var containerEl = document.querySelector('.container');
+              containerEl.appendChild(el);
+              wireAgent(el);
+              hideAdd();
+              document.getElementById('add-name').value='';
+              document.getElementById('add-phone').value='';
+              document.getElementById('add-brokerage').value='';
+              if(err){ err.style.display='none'; }
+            })
+            .catch(function(){ if(err){ err.style.display='block'; err.textContent='Could not add agent (check login)'; } });
+        });
+      }
+      var bulkSave = document.getElementById('bulk-save');
+      if(bulkSave){
+        bulkSave.addEventListener('click', function(){
+          var linesRaw = document.getElementById('bulk-lines').value || '';
+          var brokerage = document.getElementById('add-brokerage').value.trim();
+          var err = document.getElementById('bulk-error');
+          var lines = linesRaw.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(function(l){ return l.length; });
+          var items = [];
+          var phoneRe = /(?:\+?1[\s\-\.]*)?\(?([2-9][0-9]{2})\)?[\s\-\.]*([0-9]{3})[\s\-\.]*([0-9]{4})/;
+          lines.forEach(function(line){
+            var m = phoneRe.exec(line);
+            var phoneDigits = null;
+            var name = '';
+            if(m){
+              phoneDigits = (m[1]||'')+(m[2]||'')+(m[3]||'');
+              name = line.replace(m[0], ' ').replace(/\s+/g,' ').trim();
+            } else {
+              var digits = (line.match(/\d+/g)||[]).join('');
+              var d = cleanPhone(digits);
+              if(d){ phoneDigits = d; name = line.replace(/\d+/g,' ').replace(/\s+/g,' ').trim(); }
+            }
+            if(phoneDigits){ items.push({ name: name || 'Unknown', phone: phoneDigits, brokerage: brokerage }); }
+          });
+          if(!items.length){ if(err){ err.style.display='block'; err.textContent='No valid entries found'; } return; }
+          fetch('/api/agents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(items) })
+            .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
+            .then(function(){
+              var containerEl = document.querySelector('.container');
+              var existingPhones = new Set(Array.from(document.querySelectorAll('.agent input[data-phone]')).map(function(i){ return i.getAttribute('data-phone'); }));
+              items.forEach(function(it){ if(existingPhones.has(it.phone)) return; var el = createAgent(it.name, it.phone, it.brokerage); containerEl.appendChild(el); wireAgent(el); existingPhones.add(it.phone); });
+              document.getElementById('bulk-lines').value='';
+              if(err){ err.style.display='none'; }
+              hideAdd();
+            })
+            .catch(function(){ if(err){ err.style.display='block'; err.textContent='Could not add batch (check login)'; } });
+        });
+      }
+    })();
+  </script>
 </head>
 <body>
   <header>
@@ -354,7 +466,33 @@
       }
     })();
   </script>
+  <div id="add-overlay" class="add-overlay">
+    <div class="add-box">
+      <h2>Add Agent</h2>
+      <div class="add-actions">
+        <button id="mode-single" type="button" class="btn">Single</button>
+        <button id="mode-bulk" type="button" class="btn">Bulk</button>
+      </div>
+      <input id="add-name" type="text" placeholder="Name" autocomplete="name">
+      <input id="add-phone" type="tel" placeholder="Phone (e.g. 228-669-0211)" autocomplete="tel">
+      <input id="add-brokerage" type="text" placeholder="Brokerage" autocomplete="organization">
+      <div id="add-error" style="color:#f87171;font-size:12px;display:none;"></div>
+      <div class="add-actions">
+        <button id="add-cancel" type="button" class="btn">Cancel</button>
+        <button id="add-save" type="button" class="btn">Save</button>
+      </div>
+      <div id="bulk-container" style="display:none;">
+        <textarea id="bulk-lines" placeholder="One per line: Name Phone (brokerage above applies)"></textarea>
+        <div id="bulk-error" style="color:#f87171;font-size:12px;display:none;"></div>
+        <div class="add-actions">
+          <button id="bulk-save" type="button" class="btn">Save Batch</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button id="add-agent-fab" class="fab" aria-label="Add Agent">+</button>
   <div class="container">
+    
     <div class="agent">
       <input type="checkbox" data-phone="2286690211" />
       <div class="info">
@@ -2365,9 +2503,6 @@
         </div>
       </div>
     </div>
-    <div class="footer-note">
-      Checkmarks are saved only on this device in your browser (localStorage).
-      If you clear your browser data, the checklist will reset.
     </div>
   </div>
   <script>
