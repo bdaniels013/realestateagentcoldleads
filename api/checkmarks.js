@@ -1,4 +1,3 @@
-import { sql } from '@vercel/postgres'
 import { Client as PgClient } from 'pg'
 import { createHmac } from 'crypto'
 
@@ -29,8 +28,6 @@ async function ensureCheckmarksTable(){
       await client.connect()
       await client.query('CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())')
       await client.end()
-    } else {
-      await sql`CREATE TABLE IF NOT EXISTS checkmarks (phone text primary key, checked boolean not null, updated_at timestamptz not null default now())`
     }
   } catch (_) { /* ignore */ }
 }
@@ -51,11 +48,13 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const { rows } = await sql`SELECT phone, checked, updated_at FROM checkmarks`
-      res.status(200).json(rows)
-    } catch (e) {
-      res.status(200).json([])
-    }
+      const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
+      const client = new PgClient({ connectionString: conn })
+      await client.connect()
+      const r = await client.query('SELECT phone, checked, updated_at FROM checkmarks')
+      await client.end()
+      res.status(200).json(r.rows)
+    } catch (_) { res.status(200).json([]) }
     return
   }
   if (req.method === 'POST') {
@@ -69,11 +68,15 @@ export default async function handler(req, res) {
         res.status(400).json({ error: 'invalid_phone' })
         return
       }
-      await sql`INSERT INTO checkmarks(phone, checked, updated_at) VALUES(${phone}, ${checked}, now()) ON CONFLICT (phone) DO UPDATE SET checked=${checked}, updated_at=now()`
+      const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
+      const client = new PgClient({ connectionString: conn })
+      await client.connect()
+      await client.query('INSERT INTO checkmarks(phone, checked, updated_at) VALUES($1, $2, now()) ON CONFLICT (phone) DO UPDATE SET checked=$2, updated_at=now()', [phone, checked])
+      await client.end()
       res.status(200).json({ phone, checked })
       return
     } catch (e) {
-      res.status(400).json({ error: 'invalid_body' })
+      res.status(500).json({ error: 'server_error' })
       return
     }
   }

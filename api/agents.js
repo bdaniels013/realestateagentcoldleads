@@ -1,4 +1,3 @@
-import { sql } from '@vercel/postgres'
 import { Client as PgClient } from 'pg'
 import { createHmac } from 'crypto'
 
@@ -29,8 +28,6 @@ async function ensureAgentsTable(){
       await client.connect()
       await client.query('CREATE TABLE IF NOT EXISTS agents (id serial primary key, name text not null, phone text unique not null, brokerage text)')
       await client.end()
-    } else {
-      await sql`CREATE TABLE IF NOT EXISTS agents (id serial primary key, name text not null, phone text unique not null, brokerage text)`
     }
   } catch (_) { /* ignore */ }
 }
@@ -51,12 +48,13 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const { rows } = await sql`SELECT name, phone, brokerage FROM agents ORDER BY name`
-      res.status(200).json(rows)
-    } catch (e) {
-      // table missing or other error → return empty list to avoid 500
-      res.status(200).json([])
-    }
+      const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
+      const client = new PgClient({ connectionString: conn })
+      await client.connect()
+      const r = await client.query('SELECT name, phone, brokerage FROM agents ORDER BY name')
+      await client.end()
+      res.status(200).json(r.rows)
+    } catch (_) { res.status(200).json([]) }
     return
   }
   if (req.method === 'POST') {
@@ -65,19 +63,23 @@ export default async function handler(req, res) {
       if (body && body.__parse_error) { res.status(400).json({ error: 'invalid_body' }); return }
       const items = Array.isArray(body) ? body : [body]
       const inserted = []
+      const conn = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
+      const client = new PgClient({ connectionString: conn })
+      await client.connect()
       for (const it of items) {
         const name = String(it.name || 'Unknown').trim()
         const brokerage = String(it.brokerage || '').trim()
         let phone = String(it.phone || '').replace(/\D/g, '')
         if (phone.length === 11 && phone.startsWith('1')) phone = phone.slice(1)
         if (phone.length !== 10) continue
-        await sql`INSERT INTO agents(name, phone, brokerage) VALUES(${name}, ${phone}, ${brokerage}) ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name, brokerage=EXCLUDED.brokerage`
+        await client.query('INSERT INTO agents(name, phone, brokerage) VALUES($1, $2, $3) ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name, brokerage=EXCLUDED.brokerage', [name, phone, brokerage])
         inserted.push({ name, phone, brokerage })
       }
+      await client.end()
       res.status(200).json({ inserted })
       return
     } catch (e) {
-      res.status(400).json({ error: 'invalid_body' })
+      res.status(500).json({ error: 'server_error' })
       return
     }
   }
