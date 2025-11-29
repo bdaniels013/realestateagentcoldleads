@@ -124,6 +124,10 @@
     .script-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 520px; display: grid; gap: 10px; }
     .script-box h2 { margin: 0; font-size: 16px; color: #e5e7eb; }
     .script-box textarea { padding: 10px 12px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; min-height: 160px; }
+    .picker-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.9); display: none; align-items: center; justify-content: center; z-index: 80; }
+    .picker-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 420px; display: grid; gap: 10px; }
+    .picker-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border: 1px solid #1f2937; border-radius: 8px; color: #e5e7eb; }
+    .picker-item button { font-size: 12px; }
     .login-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
     .login-box { background: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; width: 90%; max-width: 360px; display: grid; gap: 10px; }
     .login-box input { padding: 8px 10px; border-radius: 8px; border: 1px solid #1f2937; background: #0b1220; color: #e5e7eb; font-size: 14px; }
@@ -147,6 +151,8 @@
       try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
       var authed = false;
       var maxOrder = 0;
+      var templates = [];
+      var pickerAlways = true;
       function updateCounts(){
         var a = document.querySelectorAll('#active .agent').length;
         var c = document.querySelectorAll('#completed .agent').length;
@@ -214,6 +220,30 @@
       function formatPhone(d){
         return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);
       }
+      function fetchTemplates(){
+        return fetch('/api/templates').then(function(r){ return r.ok ? r.json() : []; }).then(function(data){ templates = Array.isArray(data) ? data : []; if(!templates.length){ templates = [{ id:'local-default', name:'Default', text:getScript(), is_default:true }]; } }).catch(function(){ templates = [{ id:'local-default', name:'Default', text:getScript(), is_default:true }]; });
+      }
+      function buildPicker(phone, nameText, brokerageText){
+        var ov = document.getElementById('picker-overlay');
+        var list = document.getElementById('picker-list');
+        if(!ov || !list) return;
+        list.innerHTML = '';
+        templates.forEach(function(t){
+          var row = document.createElement('div'); row.className='picker-item';
+          var span = document.createElement('span'); span.textContent = t.name;
+          var btn = document.createElement('button'); btn.className='btn'; btn.textContent='Send';
+          btn.addEventListener('click', function(){
+            var body = (t.text||'').replace(/\{name\}/g, nameText||'').replace(/\{brokerage\}/g, brokerageText||'');
+            var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            var url = isiOS ? ('sms:/open?addresses='+phone+'&body='+encodeURIComponent(body)) : ('sms:'+phone+'?body='+encodeURIComponent(body));
+            ov.style.display='none';
+            try { window.location.href = url; } catch(_) {}
+            setTimeout(function(){ setRow(phone, true); }, 300);
+          });
+          row.appendChild(span); row.appendChild(btn); list.appendChild(row);
+        });
+        ov.style.display='flex';
+      }
       function wireAgent(container){
         var input = container.querySelector('input[type="checkbox"]');
         var link = container.querySelector('a.phone');
@@ -239,11 +269,15 @@
           try { link.setAttribute('href', '#'); } catch(_) {}
           link.addEventListener('click', function(e){
             e.preventDefault();
-            var body = renderScript({ name: nameText, brokerage: brokerageText });
-            var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            var url = isiOS ? ('sms:/open?addresses='+phone+'&body='+encodeURIComponent(body)) : ('sms:'+phone+'?body='+encodeURIComponent(body));
-            try { window.location.href = url; } catch(_) {}
-            setTimeout(function(){ setRow(phone, true); }, 300);
+            if(pickerAlways){ buildPicker(phone, nameText, brokerageText); }
+            else {
+              var def = templates.find(function(t){ return t.is_default; }) || templates[0] || { text:getScript() };
+              var body = (def.text||'').replace(/\{name\}/g, nameText||'').replace(/\{brokerage\}/g, brokerageText||'');
+              var isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+              var url = isiOS ? ('sms:/open?addresses='+phone+'&body='+encodeURIComponent(body)) : ('sms:'+phone+'?body='+encodeURIComponent(body));
+              try { window.location.href = url; } catch(_) {}
+              setTimeout(function(){ setRow(phone, true); }, 300);
+            }
           });
           link.dataset.smsWired = '1';
         }
@@ -441,6 +475,10 @@
         if(tabC) tabC.addEventListener('click', function(){ showTab(false); });
         showTab(true);
         checkAuth().then(function(ok){ if(ok){ authed = true; hideLogin(); initSync(); } else { showLogin(); } });
+        fetchTemplates();
+        var tgl = document.getElementById('toggle-picker');
+        if(tgl){ var saved = localStorage.getItem('smsAlwaysPicker'); if(saved!==null){ pickerAlways = saved==='true'; } tgl.textContent = 'Always Show Picker: '+(pickerAlways?'On':'Off'); tgl.addEventListener('click', function(){ pickerAlways = !pickerAlways; localStorage.setItem('smsAlwaysPicker', String(pickerAlways)); tgl.textContent = 'Always Show Picker: '+(pickerAlways?'On':'Off'); }); }
+        var pc = document.getElementById('picker-cancel'); if(pc){ pc.addEventListener('click', function(){ var ov = document.getElementById('picker-overlay'); if(ov) ov.style.display='none'; }); }
 
         var fab = document.getElementById('add-agent-fab');
         if(fab){ fab.addEventListener('click', function(){ var o = document.getElementById('add-overlay'); if(o) o.style.display = 'flex'; }); }
@@ -641,6 +679,7 @@
       var openScript = document.getElementById('open-script');
       var scriptOverlay = document.getElementById('script-overlay');
       var scriptText = document.getElementById('script-text');
+      var scriptTitle = document.getElementById('script-title');
       var scriptSave = document.getElementById('script-save');
       var scriptCancel = document.getElementById('script-cancel');
       function getScript(){
@@ -650,9 +689,17 @@
       }
       if(openScript && scriptOverlay && scriptText && scriptSave && scriptCancel){
         scriptText.value = getScript();
-        openScript.addEventListener('click', function(){ scriptText.value = getScript(); scriptOverlay.style.display = 'flex'; });
+        openScript.addEventListener('click', function(){ scriptText.value = getScript(); scriptTitle.value=''; scriptOverlay.style.display = 'flex'; });
         scriptCancel.addEventListener('click', function(){ scriptOverlay.style.display = 'none'; });
-        scriptSave.addEventListener('click', function(){ localStorage.setItem('smsScript', scriptText.value || ''); scriptOverlay.style.display = 'none'; });
+        scriptSave.addEventListener('click', function(){
+          var title = (scriptTitle.value||'').trim() || 'Untitled';
+          var text = (scriptText.value||'').trim();
+          if(!text){ scriptOverlay.style.display='none'; return }
+          fetch('/api/templates', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:title, text:text }) })
+            .then(function(r){ return r.ok ? r.json() : null })
+            .then(function(){ scriptOverlay.style.display='none'; })
+            .catch(function(){ scriptOverlay.style.display='none'; });
+        });
       }
     })();
   </script>
@@ -668,6 +715,7 @@
       <button id="tab-show-active" class="tab-btn active" type="button">Active <span id="count-active" class="badge">0</span></button>
       <button id="tab-show-completed" class="tab-btn" type="button">Completed <span id="count-completed" class="badge">0</span></button>
       <button id="open-script" class="script-btn" type="button">Script</button>
+      <button id="toggle-picker" class="script-btn" type="button">Always Show Picker: On</button>
     </div>
   </header>
   <div id="login-overlay" class="login-overlay">
@@ -722,10 +770,20 @@
   <div id="script-overlay" class="script-overlay" style="display:none;">
     <div class="script-box">
       <h2>Message Script</h2>
+      <input id="script-title" type="text" placeholder="Title (e.g., Intro A)" autocomplete="off">
       <textarea id="script-text" placeholder="Use {name} and {brokerage} where needed."></textarea>
       <div class="add-actions">
         <button id="script-cancel" type="button" class="btn">Cancel</button>
         <button id="script-save" type="button" class="btn">Save</button>
+      </div>
+    </div>
+  </div>
+  <div id="picker-overlay" class="picker-overlay" style="display:none;">
+    <div class="picker-box">
+      <div style="font-size:16px;font-weight:600;color:#e5e7eb;">Choose a Script</div>
+      <div id="picker-list"></div>
+      <div class="add-actions">
+        <button id="picker-cancel" type="button" class="btn">Cancel</button>
       </div>
     </div>
   </div>
