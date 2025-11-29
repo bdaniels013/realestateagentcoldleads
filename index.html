@@ -368,7 +368,7 @@
             var err = document.getElementById('add-error');
             if(!phoneDigits){ if(err){ err.style.display='block'; err.textContent='Enter a valid 10-digit phone'; } return; }
             fetch('/api/agents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:name, phone:phoneDigits, brokerage:brokerage }) })
-              .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
+              .then(function(r){ if(r.status===401) throw new Error('unauthorized'); if(!r.ok) throw new Error('bad'); return r.json(); })
               .then(function(){
                 var el = createAgent(name || 'Unknown', phoneDigits, brokerage || '');
                 var containerEl = document.querySelector('.container');
@@ -380,7 +380,7 @@
                 document.getElementById('add-brokerage').value='';
                 if(err){ err.style.display='none'; }
               })
-              .catch(function(){ if(err){ err.style.display='block'; err.textContent='Could not add agent (check login)'; } });
+              .catch(function(e){ if(err){ err.style.display='block'; err.textContent='Could not add agent (check login)'; } if(e && e.message==='unauthorized'){ showLogin(); } });
           });
         }
         var bulkSave = document.getElementById('bulk-save');
@@ -408,7 +408,7 @@
             });
             if(!items.length){ if(err){ err.style.display='block'; err.textContent='No valid entries found'; } return; }
             fetch('/api/agents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(items) })
-              .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
+              .then(function(r){ if(r.status===401) throw new Error('unauthorized'); if(!r.ok) throw new Error('bad'); return r.json(); })
               .then(function(){
                 var containerEl = document.querySelector('.container');
                 var existingPhones = new Set(Array.from(document.querySelectorAll('.agent input[data-phone]')).map(function(i){ return i.getAttribute('data-phone'); }));
@@ -417,7 +417,7 @@
                 if(err){ err.style.display='none'; }
                 var o = document.getElementById('add-overlay'); if(o) o.style.display='none';
               })
-              .catch(function(){ if(err){ err.style.display='block'; err.textContent='Could not add batch (check login)'; } });
+              .catch(function(e){ if(err){ err.style.display='block'; err.textContent='Could not add batch (check login)'; } if(e && e.message==='unauthorized'){ showLogin(); } });
           });
         }
       });
