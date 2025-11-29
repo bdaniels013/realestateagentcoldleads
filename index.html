@@ -418,10 +418,39 @@
               e.preventDefault();
               setRow(phone, false);
             });
-            phoneRow.appendChild(clear);
-          }
-          wireAgent(container);
+          phoneRow.appendChild(clear);
+        }
+        wireAgent(container);
         });
+        function sortList(container, mode){
+          var nodes = Array.from(container.querySelectorAll('.agent'));
+          nodes.sort(function(a,b){
+            var nA = (a.querySelector('.name')?.textContent || '').toLowerCase();
+            var nB = (b.querySelector('.name')?.textContent || '').toLowerCase();
+            var brA = (a.querySelector('.brokerage')?.textContent || '').toLowerCase();
+            var brB = (b.querySelector('.brokerage')?.textContent || '').toLowerCase();
+            if(mode==='brokerage'){
+              var cmp = brA.localeCompare(brB);
+              return cmp !== 0 ? cmp : nA.localeCompare(nB);
+            } else {
+              return nA.localeCompare(nB);
+            }
+          });
+          nodes.forEach(function(el){ container.appendChild(el); });
+        }
+        function applyCurrentSort(){
+          var mode = localStorage.getItem('sortMode') || 'name';
+          var activeEl = document.getElementById('active') || document.querySelector('.container');
+          var completedEl = document.getElementById('completed');
+          if(activeEl) sortList(activeEl, mode);
+          if(completedEl) sortList(completedEl, mode);
+          var sortNameBtn = document.getElementById('sort-name');
+          var sortBrokerageBtn = document.getElementById('sort-brokerage');
+          if(sortNameBtn && sortBrokerageBtn){
+            sortNameBtn.classList.toggle('active', mode==='name');
+            sortBrokerageBtn.classList.toggle('active', mode==='brokerage');
+          }
+        }
         applyCurrentSort();
         updateCounts();
 
@@ -519,6 +548,10 @@
         if(tabA) tabA.addEventListener('click', function(){ showTab(true); });
         if(tabC) tabC.addEventListener('click', function(){ showTab(false); });
         showTab(true);
+        var sortNameBtn = document.getElementById('sort-name');
+        var sortBrokerageBtn = document.getElementById('sort-brokerage');
+        if(sortNameBtn){ sortNameBtn.addEventListener('click', function(){ localStorage.setItem('sortMode','name'); applyCurrentSort(); }); }
+        if(sortBrokerageBtn){ sortBrokerageBtn.addEventListener('click', function(){ localStorage.setItem('sortMode','brokerage'); applyCurrentSort(); }); }
         checkAuth().then(function(ok){ if(ok){ authed = true; hideLogin(); initSync(); } else { showLogin(); } });
         fetchTemplates();
         var tgl = document.getElementById('toggle-picker');
