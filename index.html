@@ -469,11 +469,24 @@
           });
         }
 
-        function applyServerCheckmarks(list){
+      function applyServerCheckmarks(list){
+          function findAgentInputByPhone(p){
+            var sel = document.querySelector('.agent input[data-phone="'+p+'"]');
+            if(sel) return sel;
+            var agents = Array.from(document.querySelectorAll('.agent'));
+            for(var i=0;i<agents.length;i++){
+              var a = agents[i];
+              var link = a.querySelector('a.phone');
+              var digits = (link?.textContent || '').replace(/\D/g,'');
+              if(digits.length===11 && digits[0]==='1') digits = digits.slice(1);
+              if(digits === p) return a.querySelector('input[type="checkbox"]');
+            }
+            return null;
+          }
           list.forEach(function(item){
             var phone = String(item.phone || '');
             var checked = !!item.checked;
-            var input = document.querySelector('.agent input[data-phone="'+phone+'"]');
+            var input = findAgentInputByPhone(phone);
             if(!input) return;
             setRow(phone, checked);
           });

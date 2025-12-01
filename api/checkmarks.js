@@ -44,7 +44,6 @@ function readJson(req){
 }
 
 export default async function handler(req, res) {
-  if(!isAuthed(req)){ res.status(401).json({ error: 'unauthorized' }); return }
   await ensureCheckmarksTable()
 
   if (req.method === 'GET') {
@@ -60,6 +59,7 @@ export default async function handler(req, res) {
     return
   }
   if (req.method === 'POST') {
+    if(!isAuthed(req)){ res.status(401).json({ error: 'unauthorized' }); return }
     try {
       const body = await readJson(req)
       if (body && body.__parse_error) { res.status(400).json({ error: 'invalid_body' }); return }
