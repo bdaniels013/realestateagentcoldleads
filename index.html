@@ -176,8 +176,7 @@
   <script>
     (function(){
       var KEY = 'smsSent';
-      var state;
-      try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
+      var state = {};
       var authed = false;
       var maxOrder = 0;
       var templates = [];
@@ -224,38 +223,31 @@
                   .replace(/\{brokerage\}/g, data.brokerage || '');
       }
       function setRow(phone, checked){
-        if(checked){ state[phone] = true; } else { delete state[phone]; }
-        localStorage.setItem(KEY, JSON.stringify(state));
         var row = document.querySelector('.agent input[data-phone="'+phone+'"]');
-        if(!row) return;
-        var container = row.closest('.agent');
-        var cb = container && container.querySelector('input[type="checkbox"]');
-        if(cb) cb.checked = checked;
-        if(container) container.classList.toggle('done', checked);
-        var activeList = document.getElementById('active');
-        var completedList = document.getElementById('completed');
-        if(container){
-          if(checked && completedList){
-            completedList.appendChild(container);
-          } else if(activeList){
-            var order = parseInt(container.dataset.order || '0', 10);
-            var candidates = Array.from(activeList.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done') && el !== container; });
-            var before = candidates.find(function(el){ return parseInt(el.dataset.order || '0', 10) > order; });
-            activeList.insertBefore(container, before || (candidates.length ? candidates[candidates.length-1].nextSibling : activeList.firstChild));
-            resortActive();
+        var container = row ? row.closest('.agent') : null;
+        function applyUI(){
+          var cb = container && container.querySelector('input[type="checkbox"]');
+          if(cb) cb.checked = checked;
+          if(container) container.classList.toggle('done', checked);
+          var activeList = document.getElementById('active');
+          var completedList = document.getElementById('completed');
+          if(container){
+            if(checked && completedList){ completedList.appendChild(container); }
+            else if(activeList){
+              var order = parseInt(container.dataset.order || '0', 10);
+              var candidates = Array.from(activeList.querySelectorAll('.agent')).filter(function(el){ return !el.classList.contains('done') && el !== container; });
+              var before = candidates.find(function(el){ return parseInt(el.dataset.order || '0', 10) > order; });
+              activeList.insertBefore(container, before || (candidates.length ? candidates[candidates.length-1].nextSibling : activeList.firstChild));
+            }
           }
+          applyCurrentSort();
+          updateCounts();
         }
-        updateCounts();
-        applyCurrentSort();
-        if(authed){
-          try {
-            fetch('/api/checkmarks', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ phone: phone, checked: checked })
-            }).catch(function(){});
-          } catch(_) {}
-        }
+        fetch('/api/checkmarks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phone, checked: checked })
+        }).then(function(r){ if(r.status===401){ showLogin(); return; } if(!r.ok) return; applyUI(); }).catch(function(){});
       }
       function normalizePhone(p){
         var d = String(p||'').replace(/\D/g,'');
@@ -306,10 +298,7 @@
         var fullName = (container.querySelector('.name')?.textContent || '').trim();
         var nameText = fullName.split(/\s+/)[0] || fullName;
         var brokerageText = (container.querySelector('.brokerage')?.textContent || '').trim();
-        if(state[phone]){
-          input.checked = true;
-          container.classList.add('done');
-        }
+        // initial state handled via server sync
         if(input){ input.addEventListener('change', function(){ setRow(phone, input.checked); }); }
         if(link && !link.dataset.smsWired){
           try { link.setAttribute('href', '#'); } catch(_) {}
@@ -518,19 +507,11 @@
                 var name = String(item.name || 'Unknown');
                 var brokerage = String(item.brokerage || '');
                 var el = createAgent(name, phone, brokerage);
-                var initialChecked = !!state[phone];
-                if(initialChecked && document.getElementById('completed')){
-                  document.getElementById('completed').appendChild(el);
-                } else {
-                  containerEl.appendChild(el);
-                }
+                containerEl.appendChild(el);
                 wireAgent(el);
                 // apply check state if present in local storage
                 var input = el.querySelector('input[type="checkbox"]');
-                if(input){
-                  input.checked = initialChecked;
-                  el.classList.toggle('done', initialChecked);
-                }
+                if(input){ input.checked = false; el.classList.remove('done'); }
               });
               applyCurrentSort(); updateCounts();
             })
